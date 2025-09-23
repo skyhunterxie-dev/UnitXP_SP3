@@ -1,4 +1,4 @@
-// dllmain.cpp : Defines the entry point for the DLL application.
+﻿// dllmain.cpp : Defines the entry point for the DLL application.
 #include "pch.h"
 
 #define _USE_MATH_DEFINES
@@ -49,7 +49,28 @@ int __fastcall detoured_UnitXP(void* L) {
     if (lua_gettop(L) >= 2) {
         string cmd{ lua_tostring(L, 1) };
 
-        if (cmd == "inSight" && lua_gettop(L) >= 3) {
+        if (cmd == "addCombatText" && lua_gettop(L) >= 6) {
+            std::string type{ lua_tostring(L,2) };
+            std::string text{ lua_tostring(L,3) };
+
+            // Lua color ranges from 0.0 to 1.0
+            double n = lua_tonumber(L, 4) * 255.0;
+            uint8_t r = n >= 0.0 && n < 256.0 ? static_cast<uint8_t>(n) : 255;
+            n = lua_tonumber(L, 5) * 255.0;
+            uint8_t g = n >= 0.0 && n < 256.0 ? static_cast<uint8_t>(n) : 255;
+            n = lua_tonumber(L, 6) * 255.0;
+            uint8_t b = n >= 0.0 && n < 256.0 ? static_cast<uint8_t>(n) : 255;
+
+            if (type == "crit") {
+                sceneEnd_addCritText(text, D3DCOLOR_XRGB(r, g, b));
+            }
+            else {
+                sceneEnd_addSmallFloatingText(text, D3DCOLOR_XRGB(r, g, b));
+            }
+            lua_pushboolean(L, sceneEnd_isEnabled);
+            return 1;
+        }
+        else if (cmd == "inSight" && lua_gettop(L) >= 3) {
             int result = UnitXP_inSight(lua_tostring(L, 2), lua_tostring(L, 3));
             if (result >= 0) {
                 lua_pushboolean(L, result);
@@ -429,6 +450,17 @@ int __fastcall detoured_UnitXP(void* L) {
             lua_pushboolean(L, weather_alwaysClear);
             return 1;
         }
+        else if (cmd == "combatTextSP3") {
+            string subcmd{ lua_tostring(L, 2) };
+            if (subcmd == "enable") {
+                sceneEnd_useXP3combatText = true;
+            }
+            if (subcmd == "disable") {
+                sceneEnd_useXP3combatText = false;
+            }
+            lua_pushboolean(L, sceneEnd_useXP3combatText);
+            return 1;
+        }
         else if (cmd == "behindThreshold") {
             string subcmd{ lua_tostring(L,2) };
             if (subcmd == "set" && lua_gettop(L) >= 3 && lua_isnumber(L, 3)) {
@@ -453,6 +485,10 @@ int __fastcall detoured_UnitXP(void* L) {
             }
 
             return 1;
+        }
+        else if (cmd == "gameLocale") {
+            lua_pushnumber(L, vanilla1121_gameLocale());
+            return 2;
         }
     }
     return p_original_UnitXP(L);

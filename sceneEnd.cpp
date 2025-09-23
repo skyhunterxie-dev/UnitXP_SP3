@@ -1,25 +1,33 @@
-#include "pch.h"
+﻿#include "pch.h"
+
+// This file requires to be saved in UTF-8 BOM, as it includes Chinese strings
 
 #include <Windows.h>
 #include <d3d9.h>
 
 #include <string>
 #include <sstream>
-#include <unordered_map>
-#include <list>
 
 #include "sceneEnd.h"
 #include "utf8_to_utf16.h"
 #include "Vanilla1121_functions.h"
-#include "worldText.h"
 
 static ID3DXFont* sceneEnd_font = NULL;
 static ID3DXFont* sceneEnd_fontBIG = NULL;
+static ID3DXFont* sceneEnd_fontSmall = NULL;
 static LPDIRECT3DDEVICE9 lastDXdevice = NULL;
 static std::list<xp3::FloatingUpText> floatingTexts{};
 static std::unordered_map<uint64_t, xp3::CritText> critTexts{};
+static std::list<xp3::FloatingUpText> smallFloatingTexts{};
 static int floatingDistance = 300;
-static int startOffset = 50;
+static int startOffsetX = 0;
+static int startOffsetY = 50;
+static int widthOfW = -1;
+static int heightOfW = -1;
+static const float whiteFloatingTime = 2.5f;
+static const float yellowFloatingTime = 3.0f;
+static const float critTime = 3.0f;
+static const float xpTime = 5.0f;
 
 bool sceneEnd_isEnabled = false;
 
@@ -48,6 +56,23 @@ void sceneEnd_init() {
 
     sceneEnd_isEnabled = true;
 }
+
+static void sceneEnd_fontPreload(ID3DXFont* font) {
+    // Visiable ASCII by ChatGPT
+    font->PreloadCharacters(0x20, 0x7e);
+
+    // Chinese
+    font->PreloadTextW(utf8_to_utf16(u8"经验值：").c_str(), 4);
+    font->PreloadTextW(utf8_to_utf16(u8"脱离进入战斗").c_str(), 6);
+    font->PreloadTextW(utf8_to_utf16(u8"非荣誉击杀").c_str(), 5);
+    font->PreloadTextW(utf8_to_utf16(u8"未命中").c_str(), 3);
+    font->PreloadTextW(utf8_to_utf16(u8"闪避").c_str(), 2);
+    font->PreloadTextW(utf8_to_utf16(u8"招架").c_str(), 2);
+    font->PreloadTextW(utf8_to_utf16(u8"格挡").c_str(), 2);
+    font->PreloadTextW(utf8_to_utf16(u8"吸收").c_str(), 2);
+    font->PreloadTextW(utf8_to_utf16(u8"免疫").c_str(), 2);
+}
+
 void sceneEnd_end() {
     if (sceneEnd_font != NULL) {
         sceneEnd_font->Release();
@@ -56,6 +81,10 @@ void sceneEnd_end() {
     if (sceneEnd_fontBIG != NULL) {
         sceneEnd_fontBIG->Release();
         sceneEnd_fontBIG = NULL;
+    }
+    if (sceneEnd_fontSmall != NULL) {
+        sceneEnd_fontSmall->Release();
+        sceneEnd_fontSmall = NULL;
     }
     sceneEnd_isEnabled = false;
 }
@@ -71,60 +100,68 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice) {
             RECT gameWindowRect = {};
             if (GetClientRect(vanilla1121_gameWindow(), &gameWindowRect)) {
                 floatingDistance = std::abs(gameWindowRect.bottom - gameWindowRect.top) / 4;
-                startOffset = std::abs(gameWindowRect.bottom - gameWindowRect.top) / 5 / 5;
+                startOffsetY = std::abs(gameWindowRect.bottom - gameWindowRect.top) / 5 / 5;
             }
-            if (sceneEnd_font != NULL) {
-                sceneEnd_font->Release();
-                sceneEnd_font = NULL;
-            }
-            if (sceneEnd_fontBIG != NULL) {
-                sceneEnd_fontBIG->Release();
-                sceneEnd_fontBIG = NULL;
-            }
+            bool enabled = sceneEnd_isEnabled;
+            sceneEnd_end();
+            sceneEnd_isEnabled = enabled;
         }
 
         if (sceneEnd_font == NULL) {
-            // To find OS default font face name
-            NONCLIENTMETRICSW ncm = {};
-            ZeroMemory(&ncm, sizeof(ncm));
-            ncm.cbSize = sizeof(ncm);
-            if (false == SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, 0))
-            {
-                sceneEnd_isEnabled = false;
-                p_original_sceneEnd(CGxDevice);
-                return;
-            }
-
-            if (false == SUCCEEDED(p_D3DCreateFontW(dxDevice, 60, 0, FW_NORMAL, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, ncm.lfMessageFont.lfFaceName, &sceneEnd_font))) {
+            // ChatGPT: Microsoft YaHei is Unicode font and it exists even on English Windows
+            if (false == SUCCEEDED(p_D3DCreateFontW(dxDevice, 55, 0, FW_NORMAL, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Microsoft YaHei", &sceneEnd_font))) {
                 sceneEnd_font = NULL;
                 sceneEnd_isEnabled = false;
                 p_original_sceneEnd(CGxDevice);
                 return;
             }
-            sceneEnd_font->PreloadCharacters(0x20, 0x7e);
+            sceneEnd_fontPreload(sceneEnd_font);
+            widthOfW = -1;
+            heightOfW = -1;
         }
 
         if (sceneEnd_fontBIG == NULL) {
-            // To find OS default font face name
-            NONCLIENTMETRICSW ncm = {};
-            ZeroMemory(&ncm, sizeof(ncm));
-            ncm.cbSize = sizeof(ncm);
-            if (false == SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, 0))
-            {
-                sceneEnd_isEnabled = false;
-                p_original_sceneEnd(CGxDevice);
-                return;
-            }
-
-            if (false == SUCCEEDED(p_D3DCreateFontW(dxDevice, 70, 0, FW_MEDIUM, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, ncm.lfMessageFont.lfFaceName, &sceneEnd_fontBIG))) {
+            // ChatGPT: Microsoft YaHei is Unicode font and it exists even on English Windows
+            if (false == SUCCEEDED(p_D3DCreateFontW(dxDevice, 75, 0, FW_MEDIUM, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Microsoft YaHei", &sceneEnd_fontBIG))) {
                 sceneEnd_fontBIG = NULL;
                 sceneEnd_isEnabled = false;
                 p_original_sceneEnd(CGxDevice);
                 return;
             }
-            sceneEnd_fontBIG->PreloadCharacters(0x20, 0x7e);
+            sceneEnd_fontPreload(sceneEnd_fontBIG);
         }
 
+        if (sceneEnd_fontSmall == NULL) {
+            // ChatGPT: Microsoft YaHei is Unicode font and it exists even on English Windows
+            if (false == SUCCEEDED(p_D3DCreateFontW(dxDevice, 40, 0, FW_MEDIUM, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Microsoft YaHei", &sceneEnd_fontSmall))) {
+                sceneEnd_fontSmall = NULL;
+                sceneEnd_isEnabled = false;
+                p_original_sceneEnd(CGxDevice);
+                return;
+            }
+            sceneEnd_fontPreload(sceneEnd_fontSmall);
+        }
+
+        if (widthOfW < 0 || heightOfW < 0) {
+            RECT r = {};
+            SetRect(&r, 0, 0, 1, 1);
+            heightOfW = sceneEnd_font->DrawTextW(NULL, utf8_to_utf16(u8"W").c_str(), -1, &r, DT_LEFT | DT_CALCRECT, D3DCOLOR_XRGB(0, 0, 0));
+            widthOfW = r.right;
+        }
+
+        if (false == smallFloatingTexts.empty()) {
+            for (auto it = smallFloatingTexts.begin(); it != smallFloatingTexts.end();) {
+                int update = it->update(sceneEnd_fontSmall, lastDXdevice);
+                if (update == -1) {
+                    it = smallFloatingTexts.erase(it);
+                    continue;
+                }
+                if (update > 0) {
+                    it->draw();
+                }
+                it++;
+            }
+        }
         if (false == floatingTexts.empty()) {
             for (auto it = floatingTexts.begin(); it != floatingTexts.end();) {
                 int update = it->update(sceneEnd_font, lastDXdevice);
@@ -159,12 +196,18 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice) {
 static std::unordered_map<int, std::string> worldTextHistory{};
 CREATEWORLDTEXT p_createWorldText = reinterpret_cast<CREATEWORLDTEXT>(0x6c73f0);
 CREATEWORLDTEXT p_original_createWorldText = NULL;
+bool sceneEnd_useXP3combatText = false;
 void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type, char const* text, uint32_t color, uint32_t unknown) {
+    if (false == sceneEnd_useXP3combatText) {
+        p_original_createWorldText(self, type, text, color, unknown);
+        return;
+    }
+
     uint64_t stickToGUID = *reinterpret_cast<uint64_t*>(self + 0x10);
     if (stickToGUID == 0) {
         stickToGUID = UnitGUID("player");
     }
-    float time = 3.0f;
+    float time = whiteFloatingTime;
     D3DCOLOR recolor = D3DCOLOR_XRGB(255, 255, 255);
     ID3DXFont* font = sceneEnd_font;
 
@@ -180,44 +223,53 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
     case 1:
     case 3:
     {
+        int newOffsetX = startOffsetX;
         if (color != 0 && (color & 1) == 0) {
+            time = yellowFloatingTime;
+            newOffsetX -= widthOfW;
             recolor = D3DCOLOR_XRGB((color & 0xff00) >> 8, (color & 0xff0000) >> 16, (color & 0xff000000) >> 24);
         }
-        xp3::FloatingUpText newText(text, stickToGUID, recolor, time, startOffset, floatingDistance, font, lastDXdevice);
+        xp3::FloatingUpText newText(text, stickToGUID, recolor, time, newOffsetX, startOffsetY, floatingDistance, font, lastDXdevice);
         floatingTexts.push_back(newText);
         return;
     }
     case 2:
     {
-        time = 3.0f;
+        time = critTime;
         if (color != 0 && (color & 1) == 0) {
             recolor = D3DCOLOR_XRGB((color & 0xff00) >> 8, (color & 0xff0000) >> 16, (color & 0xff000000) >> 24);
         }
-        xp3::CritText newCrit(text, stickToGUID, recolor, time, startOffset, sceneEnd_font, sceneEnd_fontBIG, lastDXdevice);
+        xp3::CritText newCrit(text, stickToGUID, recolor, time, startOffsetY, sceneEnd_font, sceneEnd_fontBIG, lastDXdevice);
+
+        auto it = critTexts.find(stickToGUID);
+        if (it != critTexts.end()) {
+            critTexts.erase(it);
+        }
+
         critTexts.insert({ stickToGUID, newCrit });
         return;
     }
     case 4:
     {
-        time = 5.0f;
+        time = xpTime;
         font = sceneEnd_fontBIG;
         recolor = D3DCOLOR_XRGB(0xff, 0x33, 0xcc);
         if (color != 0 && (color & 1) == 0) {
             recolor = D3DCOLOR_XRGB((color & 0xff00) >> 8, (color & 0xff0000) >> 16, (color & 0xff000000) >> 24);
         }
-        xp3::FloatingUpText newText(text, stickToGUID, recolor, time, startOffset, floatingDistance, font, lastDXdevice);
+        xp3::FloatingUpText newText(text, stickToGUID, recolor, time, startOffsetX, startOffsetY, floatingDistance, font, lastDXdevice);
         floatingTexts.push_back(newText);
         return;
     }
     case 5:
     {
-        time = 5.0f;
+        time = xpTime;
         font = sceneEnd_fontBIG;
         recolor = D3DCOLOR_XRGB(239, 191, 4);
         if (color != 0 && (color & 1) == 0) {
             recolor = D3DCOLOR_XRGB((color & 0xff00) >> 8, (color & 0xff0000) >> 16, (color & 0xff000000) >> 24);
         }
-        xp3::FloatingUpText newText(text, stickToGUID, recolor, time, startOffset, floatingDistance, font, lastDXdevice);
+        xp3::FloatingUpText newText(text, stickToGUID, recolor, time, startOffsetX, startOffsetY, floatingDistance, font, lastDXdevice);
         floatingTexts.push_back(newText);
         return;
     }
@@ -237,6 +289,24 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
         return;
     }
     }
+}
+
+void sceneEnd_addSmallFloatingText(std::string text, D3DCOLOR color) {
+    xp3::FloatingUpText newText(text, UnitGUID("player"), color, whiteFloatingTime, 0, 0, floatingDistance, sceneEnd_fontSmall, lastDXdevice);
+    smallFloatingTexts.push_back(newText);
+}
+
+void sceneEnd_addCritText(std::string text, D3DCOLOR color) {
+    uint64_t player = UnitGUID("player");
+
+    xp3::CritText newCrit(text, player, color, critTime, startOffsetY / 2, sceneEnd_font, sceneEnd_fontBIG, lastDXdevice);
+    
+    auto it = critTexts.find(player);
+    if (it != critTexts.end()) {
+        critTexts.erase(it);
+    }
+
+    critTexts.insert({ player, newCrit });
 }
 
 std::string sceneEnd_debugText() {

@@ -1,7 +1,12 @@
-#pragma once
+﻿#pragma once
+
+#include <unordered_map>
+#include <list>
 
 #include <Windows.h>
 #include <d3dx9.h>
+
+#include "worldText.h"
 
 typedef HRESULT (WINAPI* LPD3DXCREATEFFONTW)(
     LPDIRECT3DDEVICE9       pDevice,
@@ -18,6 +23,7 @@ typedef HRESULT (WINAPI* LPD3DXCREATEFFONTW)(
     LPD3DXFONT* ppFont);
 extern LPD3DXCREATEFFONTW p_D3DCreateFontW;
 extern bool sceneEnd_isEnabled;
+extern bool sceneEnd_useXP3combatText;
 void sceneEnd_init();
 void sceneEnd_end();
 
@@ -36,5 +42,6 @@ extern CREATEWORLDTEXT p_createWorldText;
 extern CREATEWORLDTEXT p_original_createWorldText;
 void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type, char const* text, uint32_t color, uint32_t unknown);
 
-
+void sceneEnd_addSmallFloatingText(std::string text, D3DCOLOR color = D3DCOLOR_XRGB(255, 255, 255));
+void sceneEnd_addCritText(std::string text, D3DCOLOR color = D3DCOLOR_XRGB(255, 255, 255));
 std::string sceneEnd_debugText();

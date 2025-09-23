@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 
@@ -10,7 +10,7 @@
 namespace xp3 {
     class FloatingUpText {
     public:
-        FloatingUpText(std::string text, uint64_t stickToGUID, D3DCOLOR color, float timeLength,int startOffset, int floatDistance, ID3DXFont* font, LPDIRECT3DDEVICE9 device);
+        FloatingUpText(std::string text, uint64_t stickToGUID, D3DCOLOR color, float timeLength, int startOffsetX, int startOffsetY, int floatDistance, ID3DXFont* font, LPDIRECT3DDEVICE9 device);
 
         // Return 1 = draw; 0 = invisible; -1 = end
         // As device might be lost during animation, we would update it
@@ -31,12 +31,13 @@ namespace xp3 {
         float m_totalTime;
         int m_floatingDistance;
         int m_shadowWeight;
-        int m_startOffset;
+        int m_startOffsetY;
+        int m_startOffsetX;
     };
 
     class CritText {
     public:
-        CritText(std::string text, uint64_t stickToGUID, D3DCOLOR color, float timeLength, int startOffset, ID3DXFont* fontNormal, ID3DXFont* fontBig, LPDIRECT3DDEVICE9 device);
+        CritText(std::string text, uint64_t stickToGUID, D3DCOLOR color, float timeLength, int startOffsetY, ID3DXFont* fontNormal, ID3DXFont* fontBig, LPDIRECT3DDEVICE9 device);
 
         // Return 1 = draw; 0 = invisible; -1 = end
         // As device might be lost during animation, we would update it
@@ -56,7 +57,7 @@ namespace xp3 {
         int m_shadowWeight;
         int m_width;
         int m_height;
-        int m_startOffset;
+        int m_startOffsetY;
         RECT m_rect;
     };
 }

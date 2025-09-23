@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 #include <sstream>
 #include <unordered_map>
@@ -116,6 +116,7 @@ std::string perfSummary() {
     ss << "TCP fixed receiving window: " << gameSocket_hasBiggerWindow() << std::endl;
     ss << "IP smaller MTU: " << gameSocket_hasSmallerMTU() << std::endl;
     ss << getPolyfillDebug() << std::endl;
+    ss << sceneEnd_debugText() << std::endl;
     for (int i = 0; i < perfSlotsTotal; ++i) {
         if (perfSampleCount[i].QuadPart == 0) {
             continue;
@@ -145,8 +146,5 @@ std::string perfSummary() {
         }
     }
     
-    ss.str("");
-    ss << sceneEnd_debugText();
-
     return ss.str();
 }

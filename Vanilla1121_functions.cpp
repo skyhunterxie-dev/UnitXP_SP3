@@ -899,3 +899,7 @@ C3Vector vanilla1121_worldToScreen(C3Vector& world) {
     }
 }
 
+uint32_t vanilla1121_gameLocale() {
+    return *reinterpret_cast<uint32_t*>(0xc0e080);
+}
+

@@ -4,6 +4,8 @@
 #include <vector>
 #include <stdexcept>
 
+#include "utf8_to_utf16.h"
+
 // From https://stackoverflow.com/a/7154226
 std::wstring utf8_to_utf16(const std::string& utf8)
 {
