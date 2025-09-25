@@ -26,6 +26,7 @@ extern bool sceneEnd_isEnabled;
 extern bool sceneEnd_useXP3combatText;
 void sceneEnd_init();
 void sceneEnd_end();
+bool sceneEnd_reloadFont(int fontSize);
 
 
 typedef void(__fastcall* ISCENEEND)(uint32_t);

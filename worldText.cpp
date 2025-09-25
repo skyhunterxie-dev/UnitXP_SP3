@@ -8,12 +8,12 @@
 #include "utf8_to_utf16.h"
 #include "inSight.h"
 
+const int xp3::animationFPS = 180;
+
 xp3::FloatingUpText::FloatingUpText(std::string text, uint64_t stickToGUID, D3DCOLOR color, float timeLength, int startOffsetX, int startOffsetY, int floatingDistance, ID3DXFont* font, LPDIRECT3DDEVICE9 device) {
     m_text = text;
     m_stickToGUID = stickToGUID;
     m_color = color;
-    m_font = font;
-    m_device = device;
     
     QueryPerformanceCounter(&m_startTime);
 
@@ -21,12 +21,14 @@ xp3::FloatingUpText::FloatingUpText(std::string text, uint64_t stickToGUID, D3DC
     m_height = font->DrawTextW(NULL, utf8_to_utf16(text).c_str(), -1, &m_rect, DT_LEFT | DT_CALCRECT, color);
     m_width = m_rect.right;
 
-    m_timingPrecision.QuadPart = getPerformanceCounterFrequency().QuadPart / 180;
+    m_timingPrecision.QuadPart = getPerformanceCounterFrequency().QuadPart / animationFPS;
     m_totalTime = timeLength;
     m_floatingDistance = floatingDistance;
     m_shadowWeight = 2;
     m_startOffsetY = startOffsetY;
     m_startOffsetX = startOffsetX;
+
+    update(font, device);
 }
 
 int xp3::FloatingUpText::update(ID3DXFont* font, LPDIRECT3DDEVICE9 device) {
@@ -53,14 +55,14 @@ int xp3::FloatingUpText::update(ID3DXFont* font, LPDIRECT3DDEVICE9 device) {
         return 0;
     }
 
+    double step = static_cast<double>((now.QuadPart - m_startTime.QuadPart) / m_timingPrecision.QuadPart) / static_cast<double>((m_totalTime * getPerformanceCounterFrequency().QuadPart) / m_timingPrecision.QuadPart);
+    SetRect(&m_rect, static_cast<int>(p.x) - m_width / 2 + m_startOffsetX, static_cast<int>(p.y) - m_height - m_startOffsetY - static_cast<int>(step * m_floatingDistance), static_cast<int>(p.x) + m_width / 2 + m_startOffsetX, static_cast<int>(p.y) - m_startOffsetY - static_cast<int>(step * m_floatingDistance));
+
+    // We test inSight so late that even the unit is out of sight, its m_rect get updated
     if (0 >= camera_inSight(reinterpret_cast<void*>(stickTo))) {
         return 0;
     }
 
-    double step = static_cast<double>((now.QuadPart - m_startTime.QuadPart) / m_timingPrecision.QuadPart) / static_cast<double>((m_totalTime * getPerformanceCounterFrequency().QuadPart) / m_timingPrecision.QuadPart);
-    step = 1.0 - std::cos(step * M_PI_2);
-
-    SetRect(&m_rect, static_cast<int>(p.x) - m_width / 2 + m_startOffsetX, static_cast<int>(p.y) - m_height - m_startOffsetY - static_cast<int>(step * m_floatingDistance), static_cast<int>(p.x) + m_width / 2 + m_startOffsetX, static_cast<int>(p.y) - m_startOffsetY - static_cast<int>(step * m_floatingDistance));
     return 1;
 }
 
@@ -76,14 +78,15 @@ void xp3::FloatingUpText::draw() {
     m_font->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &m_rect, DT_LEFT, m_color);
 }
 
+void xp3::FloatingUpText::fastForward(int ffDistance) {
+    m_startTime.QuadPart -= static_cast<LONGLONG>((static_cast<double>(ffDistance) / static_cast<double>(m_floatingDistance)) * m_totalTime * animationFPS) * m_timingPrecision.QuadPart;
+}
+
 xp3::CritText::CritText(std::string text, uint64_t stickToGUID, D3DCOLOR color, float timeLength, int startOffsetY, ID3DXFont* fontNormal, ID3DXFont* fontBig, LPDIRECT3DDEVICE9 device) {
     m_text = text;
     m_stickToGUID = stickToGUID;
     m_color = color;
     m_totalTime = timeLength;
-    m_fontBig = fontBig;
-    m_fontNormal = fontNormal;
-    m_device = device;
 
     QueryPerformanceCounter(&m_startTime);
 
@@ -95,6 +98,8 @@ xp3::CritText::CritText(std::string text, uint64_t stickToGUID, D3DCOLOR color, 
     m_shadowWeight = 2;
     m_fontDraw = m_fontNormal;
     m_startOffsetY = startOffsetY;
+
+    update(fontNormal, fontBig, device);
 }
 
 int xp3::CritText::update(ID3DXFont* fontNormal, ID3DXFont* fontBig, LPDIRECT3DDEVICE9 device) {
@@ -122,10 +127,6 @@ int xp3::CritText::update(ID3DXFont* fontNormal, ID3DXFont* fontBig, LPDIRECT3DD
         return 0;
     }
 
-    if (0 >= camera_inSight(reinterpret_cast<void*>(stickTo))) {
-        return 0;
-    }
-
     if (now.QuadPart - m_startTime.QuadPart < 0.2f * getPerformanceCounterFrequency().QuadPart) {
         m_fontDraw = m_fontNormal;
     }
@@ -134,6 +135,12 @@ int xp3::CritText::update(ID3DXFont* fontNormal, ID3DXFont* fontBig, LPDIRECT3DD
     }
 
     SetRect(&m_rect, static_cast<int>(p.x) - m_width / 2 - m_width / 3, static_cast<int>(p.y) - m_height - m_startOffsetY, static_cast<int>(p.x) + m_width / 2 - m_width / 3, static_cast<int>(p.y) - m_startOffsetY);
+
+    // We test inSight so late that even the unit is out of sight, its m_rect get updated
+    if (0 >= camera_inSight(reinterpret_cast<void*>(stickTo))) {
+        return 0;
+    }
+
     return 1;
 }
 

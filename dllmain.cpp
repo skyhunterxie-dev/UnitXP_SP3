@@ -1,6 +1,8 @@
 ﻿// dllmain.cpp : Defines the entry point for the DLL application.
 #include "pch.h"
 
+#pragma comment(lib, "libMinHook.x86.lib")
+
 #define _USE_MATH_DEFINES
 
 #include <cmath>
@@ -457,6 +459,19 @@ int __fastcall detoured_UnitXP(void* L) {
             }
             if (subcmd == "disable") {
                 sceneEnd_useXP3combatText = false;
+            }
+            if (subcmd == "setFontSize" && lua_gettop(L) >= 3 && lua_isnumber(L, 3)) {
+                double fontSize = lua_tonumber(L, 3);
+                if (fontSize < 10.0) {
+                    fontSize = 10.0;
+                }
+                if (fontSize > 100.0) {
+                    fontSize = 100.0;
+                }
+                bool r = sceneEnd_reloadFont(static_cast<int>(fontSize));
+                lua_pushnumber(L, fontSize);
+                lua_pushboolean(L, r);
+                return 2;
             }
             lua_pushboolean(L, sceneEnd_useXP3combatText);
             return 1;

@@ -25,9 +25,10 @@ static int startOffsetY = 50;
 static int widthOfW = -1;
 static int heightOfW = -1;
 static const float whiteFloatingTime = 2.5f;
-static const float yellowFloatingTime = 3.0f;
-static const float critTime = 3.0f;
+static const float yellowFloatingTime = 2.5f;
+static const float critTime = 2.5f;
 static const float xpTime = 5.0f;
+static int sceneEnd_fontSize = 36;
 
 bool sceneEnd_isEnabled = false;
 
@@ -89,6 +90,51 @@ void sceneEnd_end() {
     sceneEnd_isEnabled = false;
 }
 
+bool sceneEnd_reloadFont(int fontSize) {
+    if (sceneEnd_isEnabled == false) {
+        return false;
+    }
+    else {
+        sceneEnd_end();
+        sceneEnd_isEnabled = true;
+    }
+
+    sceneEnd_fontSize = fontSize;
+
+    if (sceneEnd_font == NULL) {
+        // ChatGPT: Microsoft YaHei is Unicode font and it exists even on English Windows
+        if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize, 0, FW_NORMAL, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Microsoft YaHei", &sceneEnd_font))) {
+            sceneEnd_font = NULL;
+            return false;
+        }
+        sceneEnd_fontPreload(sceneEnd_font);
+        RECT r = {};
+        SetRect(&r, 0, 0, 1, 1);
+        heightOfW = sceneEnd_font->DrawTextW(NULL, utf8_to_utf16(u8"W").c_str(), -1, &r, DT_LEFT | DT_CALCRECT, D3DCOLOR_XRGB(0, 0, 0));
+        widthOfW = r.right;
+    }
+
+    if (sceneEnd_fontBIG == NULL) {
+        // ChatGPT: Microsoft YaHei is Unicode font and it exists even on English Windows
+        if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize + 6, 0, FW_MEDIUM, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Microsoft YaHei", &sceneEnd_fontBIG))) {
+            sceneEnd_fontBIG = NULL;
+            return false;
+        }
+        sceneEnd_fontPreload(sceneEnd_fontBIG);
+    }
+
+    if (sceneEnd_fontSmall == NULL) {
+        // ChatGPT: Microsoft YaHei is Unicode font and it exists even on English Windows
+        if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize - 6, 0, FW_MEDIUM, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Microsoft YaHei", &sceneEnd_fontSmall))) {
+            sceneEnd_fontSmall = NULL;
+            return false;
+        }
+        sceneEnd_fontPreload(sceneEnd_fontSmall);
+    }
+
+    return true;
+}
+
 ISCENEEND p_sceneEnd = reinterpret_cast<ISCENEEND>(0x5a17a0);
 ISCENEEND p_original_sceneEnd = NULL;
 void __fastcall detoured_sceneEnd(uint32_t CGxDevice) {
@@ -97,56 +143,28 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice) {
 
         if (dxDevice != lastDXdevice) {
             lastDXdevice = dxDevice;
+
             RECT gameWindowRect = {};
             if (GetClientRect(vanilla1121_gameWindow(), &gameWindowRect)) {
                 floatingDistance = std::abs(gameWindowRect.bottom - gameWindowRect.top) / 4;
                 startOffsetY = std::abs(gameWindowRect.bottom - gameWindowRect.top) / 5 / 5;
             }
-            bool enabled = sceneEnd_isEnabled;
-            sceneEnd_end();
-            sceneEnd_isEnabled = enabled;
-        }
 
-        if (sceneEnd_font == NULL) {
-            // ChatGPT: Microsoft YaHei is Unicode font and it exists even on English Windows
-            if (false == SUCCEEDED(p_D3DCreateFontW(dxDevice, 55, 0, FW_NORMAL, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Microsoft YaHei", &sceneEnd_font))) {
-                sceneEnd_font = NULL;
+            if (false == sceneEnd_reloadFont(sceneEnd_fontSize)) {
                 sceneEnd_isEnabled = false;
+                lastDXdevice = NULL;
                 p_original_sceneEnd(CGxDevice);
                 return;
             }
-            sceneEnd_fontPreload(sceneEnd_font);
-            widthOfW = -1;
-            heightOfW = -1;
         }
 
-        if (sceneEnd_fontBIG == NULL) {
-            // ChatGPT: Microsoft YaHei is Unicode font and it exists even on English Windows
-            if (false == SUCCEEDED(p_D3DCreateFontW(dxDevice, 75, 0, FW_MEDIUM, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Microsoft YaHei", &sceneEnd_fontBIG))) {
-                sceneEnd_fontBIG = NULL;
+        if (sceneEnd_font == NULL || sceneEnd_fontBIG == NULL || sceneEnd_fontSmall == NULL) {
+            if (false == sceneEnd_reloadFont(sceneEnd_fontSize)) {
                 sceneEnd_isEnabled = false;
+                lastDXdevice = NULL;
                 p_original_sceneEnd(CGxDevice);
                 return;
             }
-            sceneEnd_fontPreload(sceneEnd_fontBIG);
-        }
-
-        if (sceneEnd_fontSmall == NULL) {
-            // ChatGPT: Microsoft YaHei is Unicode font and it exists even on English Windows
-            if (false == SUCCEEDED(p_D3DCreateFontW(dxDevice, 40, 0, FW_MEDIUM, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Microsoft YaHei", &sceneEnd_fontSmall))) {
-                sceneEnd_fontSmall = NULL;
-                sceneEnd_isEnabled = false;
-                p_original_sceneEnd(CGxDevice);
-                return;
-            }
-            sceneEnd_fontPreload(sceneEnd_fontSmall);
-        }
-
-        if (widthOfW < 0 || heightOfW < 0) {
-            RECT r = {};
-            SetRect(&r, 0, 0, 1, 1);
-            heightOfW = sceneEnd_font->DrawTextW(NULL, utf8_to_utf16(u8"W").c_str(), -1, &r, DT_LEFT | DT_CALCRECT, D3DCOLOR_XRGB(0, 0, 0));
-            widthOfW = r.right;
         }
 
         if (false == smallFloatingTexts.empty()) {
@@ -193,6 +211,27 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice) {
     p_original_sceneEnd(CGxDevice);
 }
 
+static void sortAddNewFloatingText(xp3::FloatingUpText& newText, std::list<xp3::FloatingUpText>& list) {
+    int maxOverlapHeight = -1;
+    for (auto it = list.begin(); it != list.end(); ++it) {
+        RECT r = {};
+        if (IntersectRect(&r, &newText.m_rect, &it->m_rect)) {
+            int intersectHeight = r.bottom - r.top;
+            if (intersectHeight > maxOverlapHeight) {
+                maxOverlapHeight = intersectHeight;
+            }
+        }
+    }
+
+    if (maxOverlapHeight > 0) {
+        for (auto it = list.begin(); it != list.end(); ++it) {
+            it->fastForward(maxOverlapHeight);
+        }
+    }
+
+    list.push_back(newText);
+}
+
 static std::unordered_map<int, std::string> worldTextHistory{};
 CREATEWORLDTEXT p_createWorldText = reinterpret_cast<CREATEWORLDTEXT>(0x6c73f0);
 CREATEWORLDTEXT p_original_createWorldText = NULL;
@@ -223,14 +262,12 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
     case 1:
     case 3:
     {
-        int newOffsetX = startOffsetX;
         if (color != 0 && (color & 1) == 0) {
             time = yellowFloatingTime;
-            newOffsetX -= widthOfW;
             recolor = D3DCOLOR_XRGB((color & 0xff00) >> 8, (color & 0xff0000) >> 16, (color & 0xff000000) >> 24);
         }
-        xp3::FloatingUpText newText(text, stickToGUID, recolor, time, newOffsetX, startOffsetY, floatingDistance, font, lastDXdevice);
-        floatingTexts.push_back(newText);
+        xp3::FloatingUpText newText(text, stickToGUID, recolor, time, startOffsetX, startOffsetY, floatingDistance, font, lastDXdevice);
+        sortAddNewFloatingText(newText, floatingTexts);
         return;
     }
     case 2:
@@ -258,7 +295,7 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
             recolor = D3DCOLOR_XRGB((color & 0xff00) >> 8, (color & 0xff0000) >> 16, (color & 0xff000000) >> 24);
         }
         xp3::FloatingUpText newText(text, stickToGUID, recolor, time, startOffsetX, startOffsetY, floatingDistance, font, lastDXdevice);
-        floatingTexts.push_back(newText);
+        sortAddNewFloatingText(newText, floatingTexts);
         return;
     }
     case 5:
@@ -270,7 +307,7 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
             recolor = D3DCOLOR_XRGB((color & 0xff00) >> 8, (color & 0xff0000) >> 16, (color & 0xff000000) >> 24);
         }
         xp3::FloatingUpText newText(text, stickToGUID, recolor, time, startOffsetX, startOffsetY, floatingDistance, font, lastDXdevice);
-        floatingTexts.push_back(newText);
+        sortAddNewFloatingText(newText, floatingTexts);
         return;
     }
     default:
@@ -293,7 +330,7 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
 
 void sceneEnd_addSmallFloatingText(std::string text, D3DCOLOR color) {
     xp3::FloatingUpText newText(text, UnitGUID("player"), color, whiteFloatingTime, 0, 0, floatingDistance, sceneEnd_fontSmall, lastDXdevice);
-    smallFloatingTexts.push_back(newText);
+    sortAddNewFloatingText(newText, smallFloatingTexts);
 }
 
 void sceneEnd_addCritText(std::string text, D3DCOLOR color) {

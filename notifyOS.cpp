@@ -1,4 +1,6 @@
-#include "pch.h"
+﻿#include "pch.h"
+
+#pragma comment(lib, "Winmm.lib")
 
 #include <string>
 
