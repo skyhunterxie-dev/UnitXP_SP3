@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 #define _USE_MATH_DEFINES
 
@@ -164,7 +164,7 @@ uint64_t UnitGUID(const char* unitID) {
 
 bool CWorld_Intersect(const C3Vector* p1, const C3Vector* p2, C3Vector* intersectPoint, float* distance, uint32_t intersectFlag) {
     // The common knowledge of flag is 0x100171 or 0x100111:
-    // *- 0x100171 would cause game crash in Turtle WoW Hateforge Quarry.
+    // *- 0x100171 would cause game crash in some dungeon.
     // *- 0x100111 works well.
 
     // Internet says distance needed to be initialized to 1.0f
