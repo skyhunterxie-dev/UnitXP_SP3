@@ -676,6 +676,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for evaluatePolynomial function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
         }
+        /* Disabled by https://codeberg.org/konaka/UnitXP_SP3/issues/1 as users report disconnecting immediately when attempting to login
         if (MH_CreateHookApiEx(L"KERNEL32.DLL", "InitializeCriticalSection", &detoured_initializedCriticalSection, reinterpret_cast<LPVOID*>(&p_original_initializeCriticalSection), reinterpret_cast<LPVOID*>(&p_initializeCriticalSection)) != MH_OK) {
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for InitializeCriticalSection function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
@@ -683,7 +684,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
         if (MH_CreateHookApiEx(L"KERNEL32.DLL", "EnterCriticalSection", &detoured_enterCriticalSection, reinterpret_cast<LPVOID*>(&p_original_enterCriticalSection), reinterpret_cast<LPVOID*>(&p_enterCriticalSection)) != MH_OK) {
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for EnterCriticalSection function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
-        }
+        }*/
         if (MH_CreateHook(p_sceneEnd, &detoured_sceneEnd, reinterpret_cast<LPVOID*>(&p_original_sceneEnd)) != MH_OK) {
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for sceneEnd function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
@@ -716,6 +717,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for sceneEnd function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
             }
+            /* Disabled by https://codeberg.org/konaka/UnitXP_SP3/issues/1 as users report disconnecting immediately when attempting to login
             if (MH_RemoveHook(p_enterCriticalSection) != MH_OK) {
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for EnterCriticalSection function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
@@ -723,7 +725,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
             if (MH_RemoveHook(p_initializeCriticalSection) != MH_OK) {
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for InitializeCriticalSection function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
-            }
+            }*/
             if (MH_RemoveHook(p_evaluatePolynomial) != MH_OK) {
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for dotProduct function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
