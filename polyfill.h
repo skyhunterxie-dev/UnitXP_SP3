@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <synchapi.h>
 
@@ -129,11 +129,6 @@ typedef double(__fastcall* EVALUATEPOLYNOMIAL)(uint32_t, float*, float);
 extern EVALUATEPOLYNOMIAL p_evaluatePolynomial;
 extern EVALUATEPOLYNOMIAL p_original_evaluatePolynomial;
 double __fastcall detoured_evaluatePolynomial(uint32_t count, float* coefficients, float factor);
-
-typedef void (WINAPI* INITIALIZECRITICALSECTION)(LPCRITICAL_SECTION);
-extern INITIALIZECRITICALSECTION p_initializeCriticalSection;
-extern INITIALIZECRITICALSECTION p_original_initializeCriticalSection;
-void WINAPI detoured_initializedCriticalSection(LPCRITICAL_SECTION objPtr);
 
 typedef void(WINAPI* ENTERCRITICALSECTION)(LPCRITICAL_SECTION);
 extern ENTERCRITICALSECTION p_enterCriticalSection;

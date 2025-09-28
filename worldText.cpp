@@ -74,7 +74,7 @@ void xp3::FloatingUpText::draw() {
     shadowRect.top += m_shadowWeight;
     shadowRect.bottom += m_shadowWeight;
 
-    m_font->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &shadowRect, DT_LEFT, D3DCOLOR_XRGB(0, 0, 0));
+    m_font->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &shadowRect, DT_LEFT, D3DCOLOR_ARGB(200, 0, 0, 0));
     m_font->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &m_rect, DT_LEFT, m_color);
 }
 
@@ -152,6 +152,6 @@ void xp3::CritText::draw() {
     shadowRect.top += m_shadowWeight;
     shadowRect.bottom += m_shadowWeight;
 
-    m_fontDraw->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &shadowRect, DT_LEFT, D3DCOLOR_XRGB(0, 0, 0));
+    m_fontDraw->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &shadowRect, DT_LEFT, D3DCOLOR_ARGB(200, 0, 0, 0));
     m_fontDraw->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &m_rect, DT_LEFT, m_color);
 }

@@ -103,7 +103,7 @@ bool sceneEnd_reloadFont(int fontSize) {
 
     if (sceneEnd_font == NULL) {
         // ChatGPT: Microsoft YaHei is Unicode font and it exists even on English Windows
-        if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize, 0, FW_NORMAL, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Microsoft YaHei", &sceneEnd_font))) {
+        if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, L"Microsoft YaHei", &sceneEnd_font))) {
             sceneEnd_font = NULL;
             return false;
         }
@@ -116,7 +116,7 @@ bool sceneEnd_reloadFont(int fontSize) {
 
     if (sceneEnd_fontBIG == NULL) {
         // ChatGPT: Microsoft YaHei is Unicode font and it exists even on English Windows
-        if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize + 6, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Microsoft YaHei", &sceneEnd_fontBIG))) {
+        if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize + 6, 0, FW_BOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, L"Microsoft YaHei", &sceneEnd_fontBIG))) {
             sceneEnd_fontBIG = NULL;
             return false;
         }
@@ -125,7 +125,7 @@ bool sceneEnd_reloadFont(int fontSize) {
 
     if (sceneEnd_fontSmall == NULL) {
         // ChatGPT: Microsoft YaHei is Unicode font and it exists even on English Windows
-        if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize - 6, 0, FW_NORMAL, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Microsoft YaHei", &sceneEnd_fontSmall))) {
+        if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize - 6, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, L"Microsoft YaHei", &sceneEnd_fontSmall))) {
             sceneEnd_fontSmall = NULL;
             return false;
         }
@@ -147,7 +147,7 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice) {
             RECT gameWindowRect = {};
             if (GetClientRect(vanilla1121_gameWindow(), &gameWindowRect)) {
                 floatingDistance = std::abs(gameWindowRect.bottom - gameWindowRect.top) / 4;
-                startOffsetY = std::abs(gameWindowRect.bottom - gameWindowRect.top) / 5 / 5;
+                startOffsetY = std::abs(gameWindowRect.bottom - gameWindowRect.top) / 4 / 5;
             }
 
             if (false == sceneEnd_reloadFont(sceneEnd_fontSize)) {

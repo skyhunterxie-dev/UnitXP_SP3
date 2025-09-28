@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 #include <cmath>
 #include <map>
@@ -479,21 +479,12 @@ double __fastcall detoured_evaluatePolynomial(uint32_t count, float* coefficient
     return result;
 }
 
-static DWORD criticalSectionSpin = 4000;
-INITIALIZECRITICALSECTION p_initializeCriticalSection = NULL;
-INITIALIZECRITICALSECTION p_original_initializeCriticalSection = NULL;
-void WINAPI detoured_initializedCriticalSection(LPCRITICAL_SECTION objPtr) {
-    if (false == InitializeCriticalSectionEx(objPtr, criticalSectionSpin, CRITICAL_SECTION_NO_DEBUG_INFO)) {
-        if (false == InitializeCriticalSectionAndSpinCount(objPtr, criticalSectionSpin)) {
-            p_original_initializeCriticalSection(objPtr);
-            
-        }
-    }
-}
-
+static const DWORD criticalSectionSpin = 4000;
 ENTERCRITICALSECTION p_enterCriticalSection = NULL;
 ENTERCRITICALSECTION p_original_enterCriticalSection = NULL;
 void WINAPI detoured_enterCriticalSection(LPCRITICAL_SECTION objPtr) {
-    SetCriticalSectionSpinCount(objPtr, criticalSectionSpin);
+    if (objPtr != NULL && (reinterpret_cast<uintptr_t>(objPtr) & 1) == 0 && objPtr->SpinCount == 0) {
+        SetCriticalSectionSpinCount(objPtr, criticalSectionSpin);
+    }
     p_original_enterCriticalSection(objPtr);
 }
