@@ -452,6 +452,17 @@ int __fastcall detoured_UnitXP(void* L) {
             lua_pushboolean(L, weather_alwaysClear);
             return 1;
         }
+        else if (cmd == "hideEXPtext") {
+            string subcmd{ lua_tostring(L, 2) };
+            if (subcmd == "enable") {
+                sceneEnd_hideEXPtext = true;
+            }
+            if (subcmd == "disable") {
+                sceneEnd_hideEXPtext = false;
+            }
+            lua_pushboolean(L, sceneEnd_hideEXPtext);
+            return 1;
+        }
         else if (cmd == "combatTextSP3") {
             string subcmd{ lua_tostring(L, 2) };
             if (subcmd == "enable") {

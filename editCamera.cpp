@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 #include <algorithm>
 #include <cmath>
@@ -86,24 +86,18 @@ double __fastcall detoured_OrganicSmooth(float start, float end, float step) {
 // Return -1.0f for error
 static float cameraUnitEyeHeight(const uint32_t camera) {
     float cameraTargetZ = *reinterpret_cast<float*>(camera + 0x17c);
-    if (cameraTargetZ < 0) {
-        return -1.0f;
-    }
 
     uint32_t lookingAtUnit = vanilla1121_getVisiableObject(vanilla1121_getCameraLookingAtGUID(camera));
     if (lookingAtUnit == 0) {
-        return -1.0f;
+        return 0.0f;
     }
     if (vanilla1121_objectType(lookingAtUnit) != OBJECT_TYPE_Player && vanilla1121_objectType(lookingAtUnit) != OBJECT_TYPE_Unit) {
-        return -1.0f;
+        return 0.0f;
     }
 
     C3Vector unitPos = vanilla1121_unitPosition(lookingAtUnit);
 
     float result = cameraTargetZ - unitPos.z;
-    if (result < 0) {
-        return -1.0f;
-    }
 
     return result;
 }

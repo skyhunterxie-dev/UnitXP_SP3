@@ -4,6 +4,7 @@
 #include <list>
 
 #include <Windows.h>
+#include <d3d9.h>
 #include <d3dx9.h>
 
 #include "worldText.h"
@@ -20,14 +21,14 @@ typedef HRESULT (WINAPI* LPD3DXCREATEFFONTW)(
     DWORD                   Quality,
     DWORD                   PitchAndFamily,
     LPCWSTR                 pFaceName,
-    LPD3DXFONT* ppFont);
+    LPD3DXFONT*             ppFont);
 extern LPD3DXCREATEFFONTW p_D3DCreateFontW;
 extern bool sceneEnd_isEnabled;
 extern bool sceneEnd_useXP3combatText;
+extern bool sceneEnd_hideEXPtext;
 void sceneEnd_init();
 void sceneEnd_end();
 bool sceneEnd_reloadFont(int fontSize);
-
 
 typedef void(__fastcall* ISCENEEND)(uint32_t);
 extern ISCENEEND p_sceneEnd;
