@@ -903,3 +903,19 @@ uint32_t vanilla1121_gameLocale() {
     return *reinterpret_cast<uint32_t*>(0xc0e080);
 }
 
+std::string vanilla1121_getCVar(const std::string& name) {
+    if (name.length() == 0) {
+        return "";
+    }
+
+    typedef uint32_t(__fastcall* GETCVAR)(const char* name);
+    auto p_getCVar = reinterpret_cast<GETCVAR>(0x63dec0);
+
+    uint32_t cvar = p_getCVar(name.c_str());
+    if (cvar == 0) {
+        return "";
+    }
+
+    std::string result{ *reinterpret_cast<char**>(cvar + 0x20) };
+    return result;
+}

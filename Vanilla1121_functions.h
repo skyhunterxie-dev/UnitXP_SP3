@@ -249,3 +249,5 @@ HWND vanilla1121_gameWindow();
 uint32_t vanilla1121_worldFrame();
 C3Vector vanilla1121_worldToScreen(C3Vector& world);
 uint32_t vanilla1121_gameLocale();
+// Return empty string for error
+std::string vanilla1121_getCVar(const std::string& name);
