@@ -176,7 +176,7 @@ ULONG __stdcall detoured_D3D_deviceRelease(LPDIRECT3DDEVICE9 pSelf) {
     }
 }
 
-void sceneEnd_end() {
+static void sceneEnd_unloadFonts() {
     if (sceneEnd_font != NULL) {
         sceneEnd_font->Release();
         sceneEnd_font = NULL;
@@ -193,6 +193,10 @@ void sceneEnd_end() {
         sceneEnd_fontHUGE->Release();
         sceneEnd_fontHUGE = NULL;
     }
+}
+
+void sceneEnd_end() {
+    sceneEnd_unloadFonts();
     sceneEnd_isEnabled = false;
 }
 
@@ -201,8 +205,7 @@ bool sceneEnd_reloadFont(int fontSize) {
         return false;
     }
     else {
-        sceneEnd_end();
-        sceneEnd_isEnabled = true;
+        sceneEnd_unloadFonts();
     }
 
     // ChatGPT: Microsoft YaHei is an Unicode font and it exists even on English Windows
@@ -253,6 +256,12 @@ ISCENEEND p_original_sceneEnd = NULL;
 void __fastcall detoured_sceneEnd(uint32_t CGxDevice) {
     if (*reinterpret_cast<uint32_t*>(CGxDevice + 0x3a38) != NULL && sceneEnd_isEnabled) {
         LPDIRECT3DDEVICE9 dxDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(*reinterpret_cast<uint32_t*>(CGxDevice + 0x38a8));
+
+        if (dxDevice->TestCooperativeLevel() != D3D_OK) {
+            sceneEnd_unloadFonts();
+            p_original_sceneEnd(CGxDevice);
+            return;
+        }
 
         if (dxDevice != lastDXdevice) {
             lastDXdevice = dxDevice;
@@ -317,8 +326,6 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice) {
             }
         }
 
-
-
         // First iteration does not draw but only update RECT for overlapping test
         for (auto it = critTexts.begin(); it != critTexts.end();) {
             int update = it->second.update(sceneEnd_font, sceneEnd_fontBIG, sceneEnd_fontHUGE, lastDXdevice);
@@ -335,7 +342,6 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice) {
                 it = smallFloatingTexts.erase(it);
                 continue;
             }
-
 
             if (update > 0) {
                 for (auto jt = critTexts.begin(); jt != critTexts.end(); jt++) {
@@ -430,6 +436,11 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
         return;
     }
 
+    if (lastDXdevice == NULL || sceneEnd_font == NULL || sceneEnd_fontBIG == NULL || sceneEnd_fontHUGE == NULL || sceneEnd_fontSmall == NULL) {
+        p_original_createWorldText(self, type, text, color, unknown);
+        return;
+    }
+
     uint64_t stickToGUID = *reinterpret_cast<uint64_t*>(self + 0x10);
     if (stickToGUID == 0) {
         stickToGUID = UnitGUID("player");
@@ -493,11 +504,19 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
 }
 
 void sceneEnd_addSmallFloatingText(std::string text, int r, int g, int b, int a) {
+    if (lastDXdevice == NULL || sceneEnd_font == NULL || sceneEnd_fontBIG == NULL || sceneEnd_fontHUGE == NULL || sceneEnd_fontSmall == NULL) {
+        return;
+    }
+
     xp3::FloatingUpText newText(text, UnitGUID("player"), r, g, b, a, sceneEnd_fontSmall, lastDXdevice);
     sortAddNewFloatingText(newText, smallFloatingTexts);
 }
 
 void sceneEnd_addCritText(std::string text, int r, int g, int b, int a) {
+    if (lastDXdevice == NULL || sceneEnd_font == NULL || sceneEnd_fontBIG == NULL || sceneEnd_fontHUGE == NULL || sceneEnd_fontSmall == NULL) {
+        return;
+    }
+
     uint64_t player = UnitGUID("player");
 
     D3DCOLOR color = D3DCOLOR_ARGB(a, r, g, b);
@@ -514,7 +533,7 @@ void sceneEnd_addCritText(std::string text, int r, int g, int b, int a) {
 std::string sceneEnd_debugText() {
     std::stringstream ss{};
     ss << "Unimplemented world text history:" << std::endl;
-    for (auto &i : worldTextHistory) {
+    for (auto& i : worldTextHistory) {
         ss << i.second << std::endl;
     }
     return ss.str();
