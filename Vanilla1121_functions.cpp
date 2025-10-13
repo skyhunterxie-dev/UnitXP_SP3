@@ -865,6 +865,15 @@ HWND vanilla1121_gameWindow() {
     return p_getGameWindow(0);
 }
 
+RECT vanilla1121_gameClientRect() {
+    RECT result = {};
+    if (GetClientRect(vanilla1121_gameWindow(), &result) == 0) {
+        MessageBoxW(NULL, utf8_to_utf16(u8"Failed to get game client rect.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+        ZeroMemory(&result, sizeof result);
+    }
+    return result;
+}
+
 uint32_t vanilla1121_worldFrame() {
     return *reinterpret_cast<uint32_t*>(0xb4b2bc);
 }

@@ -20,19 +20,12 @@ static ID3DXFont* sceneEnd_fontBIG = NULL;
 static bool fontBIGOnLost = false;
 static ID3DXFont* sceneEnd_fontSmall = NULL;
 static bool fontSmallOnLost = false;
+static ID3DXFont* sceneEnd_fontHUGE = NULL;
+static bool fontHugeOnLost = false;
 static LPDIRECT3DDEVICE9 lastDXdevice = NULL;
 static std::list<xp3::FloatingUpText> floatingTexts{};
 static std::unordered_map<uint64_t, xp3::CritText> critTexts{};
 static std::list<xp3::FloatingUpText> smallFloatingTexts{};
-static int floatingDistance = 300;
-static int startOffsetX = 0;
-static int startOffsetY = 50;
-static int widthOfW = -1;
-static int heightOfW = -1;
-static const float whiteFloatingTime = 2.5f;
-static const float yellowFloatingTime = 2.5f;
-static const float critTime = 2.5f;
-static const float xpTime = 5.0f;
 static int sceneEnd_fontSize = 36;
 
 bool sceneEnd_isEnabled = false;
@@ -100,6 +93,10 @@ HRESULT __stdcall detoured_D3D_deviceReset(LPDIRECT3DDEVICE9 pSelf, D3DPRESENT_P
         sceneEnd_fontSmall->OnLostDevice();
         fontSmallOnLost = true;
     }
+    if (sceneEnd_fontHUGE != NULL && fontHugeOnLost == false) {
+        sceneEnd_fontHUGE->OnLostDevice();
+        fontHugeOnLost = true;
+    }
 
     HRESULT ret = p_original_D3D_deviceReset(pSelf, pPresentationParameters);
 
@@ -107,10 +104,12 @@ HRESULT __stdcall detoured_D3D_deviceReset(LPDIRECT3DDEVICE9 pSelf, D3DPRESENT_P
         HRESULT rFont = sceneEnd_font->OnResetDevice();
         HRESULT rFontBIG = sceneEnd_fontBIG->OnResetDevice();
         HRESULT rFontSmall = sceneEnd_fontSmall->OnResetDevice();
-        if (rFont == S_OK && rFontBIG == S_OK && rFontSmall == S_OK) {
+        HRESULT rFontHUGE = sceneEnd_fontHUGE->OnResetDevice();
+        if (rFont == S_OK && rFontBIG == S_OK && rFontSmall == S_OK && rFontHUGE == S_OK) {
             fontOnLost = false;
             fontBIGOnLost = false;
             fontSmallOnLost = false;
+            fontHugeOnLost = false;
         }
         else {
             // If reset failed, we try to reload
@@ -118,6 +117,7 @@ HRESULT __stdcall detoured_D3D_deviceReset(LPDIRECT3DDEVICE9 pSelf, D3DPRESENT_P
                 fontOnLost = false;
                 fontBIGOnLost = false;
                 fontSmallOnLost = false;
+                fontHugeOnLost = false;
             }
             else {
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed to reset nor reload font during D3D device reset.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
@@ -189,6 +189,10 @@ void sceneEnd_end() {
         sceneEnd_fontSmall->Release();
         sceneEnd_fontSmall = NULL;
     }
+    if (sceneEnd_fontHUGE != NULL) {
+        sceneEnd_fontHUGE->Release();
+        sceneEnd_fontHUGE = NULL;
+    }
     sceneEnd_isEnabled = false;
 }
 
@@ -201,25 +205,21 @@ bool sceneEnd_reloadFont(int fontSize) {
         sceneEnd_isEnabled = true;
     }
 
+    // ChatGPT: Microsoft YaHei is an Unicode font and it exists even on English Windows
+    const std::string fontName{ u8"Microsoft YaHei" };
     sceneEnd_fontSize = fontSize;
 
     if (sceneEnd_font == NULL) {
-        // ChatGPT: Microsoft YaHei is Unicode font and it exists even on English Windows
-        if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, L"Microsoft YaHei", &sceneEnd_font))) {
+        if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(fontName).c_str(), &sceneEnd_font))) {
             sceneEnd_font = NULL;
             return false;
         }
         sceneEnd_fontPreload(sceneEnd_font);
-        RECT r = {};
-        SetRect(&r, 0, 0, 1, 1);
-        heightOfW = sceneEnd_font->DrawTextW(NULL, utf8_to_utf16(u8"W").c_str(), -1, &r, DT_LEFT | DT_CALCRECT, D3DCOLOR_XRGB(0, 0, 0));
-        widthOfW = r.right;
         fontOnLost = false;
     }
 
     if (sceneEnd_fontBIG == NULL) {
-        // ChatGPT: Microsoft YaHei is Unicode font and it exists even on English Windows
-        if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize + 6, 0, FW_BOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, L"Microsoft YaHei", &sceneEnd_fontBIG))) {
+        if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize + 15, 0, FW_BOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(fontName).c_str(), &sceneEnd_fontBIG))) {
             sceneEnd_fontBIG = NULL;
             return false;
         }
@@ -228,13 +228,21 @@ bool sceneEnd_reloadFont(int fontSize) {
     }
 
     if (sceneEnd_fontSmall == NULL) {
-        // ChatGPT: Microsoft YaHei is Unicode font and it exists even on English Windows
-        if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize - 6, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, L"Microsoft YaHei", &sceneEnd_fontSmall))) {
+        if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize - 4, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(fontName).c_str(), &sceneEnd_fontSmall))) {
             sceneEnd_fontSmall = NULL;
             return false;
         }
         sceneEnd_fontPreload(sceneEnd_fontSmall);
         fontSmallOnLost = false;
+    }
+
+    if (sceneEnd_fontHUGE == NULL) {
+        if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize + 15, 0, FW_HEAVY, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(fontName).c_str(), &sceneEnd_fontHUGE))) {
+            sceneEnd_fontHUGE = NULL;
+            return false;
+        }
+        sceneEnd_fontPreload(sceneEnd_fontHUGE);
+        fontHugeOnLost = false;
     }
 
     return true;
@@ -292,12 +300,6 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice) {
                 return;
             }
 
-            RECT gameWindowRect = {};
-            if (GetClientRect(vanilla1121_gameWindow(), &gameWindowRect)) {
-                floatingDistance = std::abs(gameWindowRect.bottom - gameWindowRect.top) / 4;
-                startOffsetY = std::abs(gameWindowRect.bottom - gameWindowRect.top) / 4 / 5;
-            }
-
             if (false == sceneEnd_reloadFont(sceneEnd_fontSize)) {
                 sceneEnd_isEnabled = false;
                 lastDXdevice = NULL;
@@ -315,45 +317,79 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice) {
             }
         }
 
-        if (false == smallFloatingTexts.empty()) {
-            for (auto it = smallFloatingTexts.begin(); it != smallFloatingTexts.end();) {
-                int update = it->update(sceneEnd_fontSmall, lastDXdevice);
-                if (update == -1) {
-                    it = smallFloatingTexts.erase(it);
-                    continue;
-                }
-                if (update > 0 && fontSmallOnLost == false) {
-                    it->draw();
-                }
-                it++;
+
+
+        // First iteration does not draw but only update RECT for overlapping test
+        for (auto it = critTexts.begin(); it != critTexts.end();) {
+            int update = it->second.update(sceneEnd_font, sceneEnd_fontBIG, sceneEnd_fontHUGE, lastDXdevice);
+            if (update == -1) {
+                it = critTexts.erase(it);
+                continue;
             }
+            it++;
         }
-        if (false == floatingTexts.empty()) {
-            for (auto it = floatingTexts.begin(); it != floatingTexts.end();) {
-                int update = it->update(sceneEnd_font, lastDXdevice);
-                if (update == -1) {
-                    it = floatingTexts.erase(it);
-                    continue;
-                }
-                if (update > 0 && fontOnLost == false) {
-                    it->draw();
-                }
-                it++;
+
+        for (auto it = smallFloatingTexts.begin(); it != smallFloatingTexts.end();) {
+            int update = it->update(sceneEnd_fontSmall, lastDXdevice);
+            if (update == -1) {
+                it = smallFloatingTexts.erase(it);
+                continue;
             }
-        }
-        if (false == critTexts.empty()) {
-            for (auto it = critTexts.begin(); it != critTexts.end();) {
-                int update = it->second.update(sceneEnd_font, sceneEnd_fontBIG, lastDXdevice);
-                if (update == -1) {
-                    it = critTexts.erase(it);
-                    continue;
+
+
+            if (update > 0) {
+                for (auto jt = critTexts.begin(); jt != critTexts.end(); jt++) {
+                    RECT r = {};
+                    if (IntersectRect(&r, &(jt->second.m_rect), &(it->m_rect)) != 0) {
+                        update = 0;
+                        break;
+                    }
                 }
-                if (update > 0 && fontBIGOnLost == false) {
-                    it->second.draw();
-                }
-                it++;
             }
+
+            if (update > 0 && fontSmallOnLost == false) {
+                it->draw();
+            }
+            it++;
         }
+
+
+        for (auto it = floatingTexts.begin(); it != floatingTexts.end();) {
+            int update = it->update(sceneEnd_font, lastDXdevice);
+            if (update == -1) {
+                it = floatingTexts.erase(it);
+                continue;
+            }
+
+            if (update > 0) {
+                for (auto jt = critTexts.begin(); jt != critTexts.end(); jt++) {
+                    RECT r = {};
+                    if (IntersectRect(&r, &(jt->second.m_rect), &(it->m_rect)) != 0) {
+                        update = 0;
+                        break;
+                    }
+                }
+            }
+
+            if (update > 0 && fontOnLost == false) {
+                it->draw();
+            }
+            it++;
+        }
+
+
+        for (auto it = critTexts.begin(); it != critTexts.end();) {
+            int update = it->second.update(sceneEnd_font, sceneEnd_fontBIG, sceneEnd_fontHUGE, lastDXdevice);
+            if (update == -1) {
+                it = critTexts.erase(it);
+                continue;
+            }
+            if (update > 0 && fontBIGOnLost == false) {
+                it->second.draw();
+            }
+            it++;
+        }
+
     }
 
     p_original_sceneEnd(CGxDevice);
@@ -398,9 +434,15 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
     if (stickToGUID == 0) {
         stickToGUID = UnitGUID("player");
     }
-    float time = whiteFloatingTime;
-    D3DCOLOR recolor = D3DCOLOR_XRGB(255, 255, 255);
     ID3DXFont* font = sceneEnd_font;
+    int r = 255;
+    int g = 255;
+    int b = 255;
+    if (color != 0 && (color & 1) == 0) {
+        r = (color >> 8) & 0xff;
+        g = (color >> 16) & 0xff;
+        b = (color >> 24) & 0xff;
+    }
 
     // type:
     // 0 attack/heal
@@ -413,22 +455,16 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
     case 0:
     case 1:
     case 3:
+    case 4:
+    case 5:
     {
-        if (color != 0 && (color & 1) == 0) {
-            time = yellowFloatingTime;
-            recolor = D3DCOLOR_XRGB((color & 0xff00) >> 8, (color & 0xff0000) >> 16, (color & 0xff000000) >> 24);
-        }
-        xp3::FloatingUpText newText(text, stickToGUID, recolor, time, startOffsetX, startOffsetY, floatingDistance, font, lastDXdevice);
+        xp3::FloatingUpText newText(text, stickToGUID, r, g, b, 255, font, lastDXdevice);
         sortAddNewFloatingText(newText, floatingTexts);
         return;
     }
     case 2:
     {
-        time = critTime;
-        if (color != 0 && (color & 1) == 0) {
-            recolor = D3DCOLOR_XRGB((color & 0xff00) >> 8, (color & 0xff0000) >> 16, (color & 0xff000000) >> 24);
-        }
-        xp3::CritText newCrit(text, stickToGUID, recolor, time, startOffsetY, sceneEnd_font, sceneEnd_fontBIG, lastDXdevice);
+        xp3::CritText newCrit(text, stickToGUID, r, g, b, 255, sceneEnd_font, sceneEnd_fontBIG, sceneEnd_fontHUGE, lastDXdevice);
 
         auto it = critTexts.find(stickToGUID);
         if (it != critTexts.end()) {
@@ -436,30 +472,6 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
         }
 
         critTexts.insert({ stickToGUID, newCrit });
-        return;
-    }
-    case 4:
-    {
-        time = xpTime;
-        font = sceneEnd_fontBIG;
-        recolor = D3DCOLOR_XRGB(0xff, 0x33, 0xcc);
-        if (color != 0 && (color & 1) == 0) {
-            recolor = D3DCOLOR_XRGB((color & 0xff00) >> 8, (color & 0xff0000) >> 16, (color & 0xff000000) >> 24);
-        }
-        xp3::FloatingUpText newText(text, stickToGUID, recolor, time, startOffsetX, startOffsetY, floatingDistance, font, lastDXdevice);
-        sortAddNewFloatingText(newText, floatingTexts);
-        return;
-    }
-    case 5:
-    {
-        time = xpTime;
-        font = sceneEnd_fontBIG;
-        recolor = D3DCOLOR_XRGB(239, 191, 4);
-        if (color != 0 && (color & 1) == 0) {
-            recolor = D3DCOLOR_XRGB((color & 0xff00) >> 8, (color & 0xff0000) >> 16, (color & 0xff000000) >> 24);
-        }
-        xp3::FloatingUpText newText(text, stickToGUID, recolor, time, startOffsetX, startOffsetY, floatingDistance, font, lastDXdevice);
-        sortAddNewFloatingText(newText, floatingTexts);
         return;
     }
     default:
@@ -480,16 +492,17 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
     }
 }
 
-void sceneEnd_addSmallFloatingText(std::string text, D3DCOLOR color) {
-    xp3::FloatingUpText newText(text, UnitGUID("player"), color, whiteFloatingTime, 0, 0, floatingDistance, sceneEnd_fontSmall, lastDXdevice);
+void sceneEnd_addSmallFloatingText(std::string text, int r, int g, int b, int a) {
+    xp3::FloatingUpText newText(text, UnitGUID("player"), r, g, b, a, sceneEnd_fontSmall, lastDXdevice);
     sortAddNewFloatingText(newText, smallFloatingTexts);
 }
 
-void sceneEnd_addCritText(std::string text, D3DCOLOR color) {
+void sceneEnd_addCritText(std::string text, int r, int g, int b, int a) {
     uint64_t player = UnitGUID("player");
 
-    xp3::CritText newCrit(text, player, color, critTime, startOffsetY / 2, sceneEnd_font, sceneEnd_fontBIG, lastDXdevice);
-    
+    D3DCOLOR color = D3DCOLOR_ARGB(a, r, g, b);
+    xp3::CritText newCrit(text, player, r, g, b, a, sceneEnd_font, sceneEnd_fontBIG, sceneEnd_fontHUGE, lastDXdevice);
+
     auto it = critTexts.find(player);
     if (it != critTexts.end()) {
         critTexts.erase(it);

@@ -3,6 +3,8 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
+#include <Windows.h>
+
 #include "worldText.h"
 #include "Vanilla1121_functions.h"
 #include "utf8_to_utf16.h"
@@ -10,23 +12,44 @@
 
 const int xp3::animationFPS = 180;
 
-xp3::FloatingUpText::FloatingUpText(std::string text, uint64_t stickToGUID, D3DCOLOR color, float timeLength, int startOffsetX, int startOffsetY, int floatingDistance, ID3DXFont* font, LPDIRECT3DDEVICE9 device) {
+xp3::FloatingUpText::FloatingUpText(std::string text, uint64_t stickToGUID, int r, int g, int b, int a, ID3DXFont* font, LPDIRECT3DDEVICE9 device) {
     m_text = text;
     m_stickToGUID = stickToGUID;
-    m_color = color;
+    m_r = r;
+    m_g = g;
+    m_b = b;
+    m_a = a;
+    m_alpha = 1.0;
     
     QueryPerformanceCounter(&m_startTime);
 
     SetRect(&m_rect, 0, 0, 1, 1);
-    m_height = font->DrawTextW(NULL, utf8_to_utf16(text).c_str(), -1, &m_rect, DT_LEFT | DT_CALCRECT, color);
+    m_height = font->DrawTextW(NULL, utf8_to_utf16(text).c_str(), -1, &m_rect, DT_LEFT | DT_CALCRECT, D3DCOLOR_XRGB(r, g, b));
     m_width = m_rect.right;
 
     m_timingPrecision.QuadPart = getPerformanceCounterFrequency().QuadPart / animationFPS;
-    m_totalTime = timeLength;
-    m_floatingDistance = floatingDistance;
+    m_totalTime = 1.9;
+    m_fadeOutTime = 1.3;
     m_shadowWeight = 2;
-    m_startOffsetY = startOffsetY;
-    m_startOffsetX = startOffsetX;
+    m_offsetY = 0;
+    m_offsetX = 0;
+
+    float useScale = std::stof(vanilla1121_getCVar("useUiScale"));
+    float uiScale = 1.0f;
+    if (useScale > 0.0f) {
+        uiScale = std::stof(vanilla1121_getCVar("uiScale"));
+    }
+    
+    RECT winSize = vanilla1121_gameClientRect();
+
+    // Original
+    m_floatingDistance = static_cast<int>((609.0 - 384.0) / 768.0 / uiScale * (winSize.bottom - winSize.top));
+
+    // Adjusted
+    m_floatingDistance /= 2;
+    if (stickToGUID == UnitGUID("player")) {
+        m_floatingDistance = static_cast<int>(m_floatingDistance * 1.5);
+    }
 
     update(font, device);
 }
@@ -50,13 +73,34 @@ int xp3::FloatingUpText::update(ID3DXFont* font, LPDIRECT3DDEVICE9 device) {
         return 0;
     }
 
-    C3Vector p = vanilla1121_worldToScreen(vanilla1121_unitPosition(stickTo));
+    C3Vector pos = vanilla1121_unitPosition(stickTo);
+
+    if (m_stickToGUID != UnitGUID("player")) {
+        float h = vanilla1121_unitCollisionBoxHeight(stickTo);
+        h = std::fmin(4.0f, h);
+
+        pos.z += h;
+    }
+
+    C3Vector p = vanilla1121_worldToScreen(pos);
     if (p.x < 0.0f || p.y < 0.0f) {
         return 0;
     }
 
-    double step = static_cast<double>((now.QuadPart - m_startTime.QuadPart) / m_timingPrecision.QuadPart) / static_cast<double>((m_totalTime * getPerformanceCounterFrequency().QuadPart) / m_timingPrecision.QuadPart);
-    SetRect(&m_rect, static_cast<int>(p.x) - m_width / 2 + m_startOffsetX, static_cast<int>(p.y) - m_height - m_startOffsetY - static_cast<int>(step * m_floatingDistance), static_cast<int>(p.x) + m_width / 2 + m_startOffsetX, static_cast<int>(p.y) - m_startOffsetY - static_cast<int>(step * m_floatingDistance));
+    double elapsed = static_cast<double>((now.QuadPart - m_startTime.QuadPart) / m_timingPrecision.QuadPart);
+    double totalFrameCount = m_totalTime * animationFPS;
+    double step = elapsed / totalFrameCount;
+    SetRect(&m_rect, static_cast<int>(p.x) - m_width / 2 + m_offsetX, static_cast<int>(p.y) - m_height - m_offsetY - static_cast<int>(step * m_floatingDistance), static_cast<int>(p.x) + m_width / 2 + m_offsetX, static_cast<int>(p.y) - m_offsetY - static_cast<int>(step * m_floatingDistance));
+
+
+    double fadeOut = m_fadeOutTime * animationFPS;
+    if (elapsed > fadeOut) {
+        m_alpha = 1.0 - (elapsed - fadeOut) / (totalFrameCount - fadeOut);
+        m_alpha = std::fmax(0.0, m_alpha);
+    }
+    else {
+        m_alpha = 1.0;
+    }
 
     // We test inSight so late that even the unit is out of sight, its m_rect get updated
     if (0 >= camera_inSight(reinterpret_cast<void*>(stickTo))) {
@@ -74,37 +118,60 @@ void xp3::FloatingUpText::draw() {
     shadowRect.top += m_shadowWeight;
     shadowRect.bottom += m_shadowWeight;
 
-    m_font->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &shadowRect, DT_LEFT, D3DCOLOR_ARGB(200, 0, 0, 0));
-    m_font->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &m_rect, DT_LEFT, m_color);
+    m_font->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &shadowRect, DT_LEFT, D3DCOLOR_ARGB(static_cast<int>(200 * m_alpha), 0, 0, 0));
+    m_font->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &m_rect, DT_LEFT, D3DCOLOR_ARGB(static_cast<int>(m_a * m_alpha), m_r, m_g, m_b));
 }
 
 void xp3::FloatingUpText::fastForward(int ffDistance) {
     m_startTime.QuadPart -= static_cast<LONGLONG>((static_cast<double>(ffDistance) / static_cast<double>(m_floatingDistance)) * m_totalTime * animationFPS) * m_timingPrecision.QuadPart;
 }
 
-xp3::CritText::CritText(std::string text, uint64_t stickToGUID, D3DCOLOR color, float timeLength, int startOffsetY, ID3DXFont* fontNormal, ID3DXFont* fontBig, LPDIRECT3DDEVICE9 device) {
+xp3::CritText::CritText(std::string text, uint64_t stickToGUID, int r, int g, int b, int a, ID3DXFont* fontNormal, ID3DXFont* fontBig, ID3DXFont* fontHuge, LPDIRECT3DDEVICE9 device) {
     m_text = text;
     m_stickToGUID = stickToGUID;
-    m_color = color;
-    m_totalTime = timeLength;
+    m_totalTime = 2.2;
+    m_fadeOutTime = 1.6;
+    m_r = r;
+    m_g = g;
+    m_b = b;
+    m_a = a;
+    m_alpha = 1.0;
+    m_alpha_forHugeFont = 0.0;
+    m_timingPrecision.QuadPart = getPerformanceCounterFrequency().QuadPart / animationFPS;
 
     QueryPerformanceCounter(&m_startTime);
 
     SetRect(&m_rect, 0, 0, 1, 1);
-    m_height = fontBig->DrawTextW(NULL, utf8_to_utf16(text).c_str(), -1, &m_rect, DT_LEFT | DT_CALCRECT, color);
+    m_height = fontHuge->DrawTextW(NULL, utf8_to_utf16(text).c_str(), -1, &m_rect, DT_LEFT | DT_CALCRECT, D3DCOLOR_XRGB(r, g, b));
     m_width = m_rect.right;
 
-    m_totalTime = timeLength;
     m_shadowWeight = 2;
     m_fontDraw = m_fontNormal;
-    m_startOffsetY = startOffsetY;
 
-    update(fontNormal, fontBig, device);
+    float useScale = std::stof(vanilla1121_getCVar("useUiScale"));
+    float uiScale = 1.0f;
+    if (useScale > 0.0f) {
+        uiScale = std::stof(vanilla1121_getCVar("uiScale"));
+    }
+
+    RECT winSize = vanilla1121_gameClientRect();
+
+    // Original
+    m_floatingDistance = static_cast<int>((609.0 - 384.0) / 768.0 / uiScale * (winSize.bottom - winSize.top));
+
+    // Adjusted
+    m_floatingDistance /= 2;
+    if (stickToGUID == UnitGUID("player")) {
+        m_floatingDistance = static_cast<int>(m_floatingDistance * 1.2);
+    }
+
+    update(fontNormal, fontBig, fontHuge, device);
 }
 
-int xp3::CritText::update(ID3DXFont* fontNormal, ID3DXFont* fontBig, LPDIRECT3DDEVICE9 device) {
+int xp3::CritText::update(ID3DXFont* fontNormal, ID3DXFont* fontBig, ID3DXFont* fontHuge, LPDIRECT3DDEVICE9 device) {
     m_fontNormal = fontNormal;
     m_fontBig = fontBig;
+    m_fontHuge = fontHuge;
     m_device = device;
 
     LARGE_INTEGER now = {};
@@ -122,19 +189,51 @@ int xp3::CritText::update(ID3DXFont* fontNormal, ID3DXFont* fontBig, LPDIRECT3DD
         return 0;
     }
 
-    C3Vector p = vanilla1121_worldToScreen(vanilla1121_unitPosition(stickTo));
+    C3Vector pos = vanilla1121_unitPosition(stickTo);
+    if (m_stickToGUID != UnitGUID("player")) {
+        float h = vanilla1121_unitCollisionBoxHeight(stickTo);
+        h = std::fmin(4.0f, h);
+
+        pos.z += h;
+    }
+
+    C3Vector p = vanilla1121_worldToScreen(pos);
     if (p.x < 0.0f || p.y < 0.0f) {
         return 0;
     }
 
-    if (now.QuadPart - m_startTime.QuadPart < 0.2f * getPerformanceCounterFrequency().QuadPart) {
+    p.y -= m_floatingDistance / 2.0f;
+
+    double elapsed = static_cast<double>((now.QuadPart - m_startTime.QuadPart) / m_timingPrecision.QuadPart);
+    double totalFrameCount = m_totalTime * animationFPS;
+
+    if (elapsed < 0.1 * animationFPS) {
         m_fontDraw = m_fontNormal;
+        m_alpha = 1.0;
+        m_alpha_forHugeFont = 0.0;
+    }
+    else if (elapsed < 0.3 * animationFPS) {
+        m_fontDraw = m_fontBig;
+        m_alpha = 1.0;
+
+        m_alpha_forHugeFont = 1.0 - (elapsed - 0.1 * animationFPS) / (0.2 * animationFPS);
+        m_alpha = std::fmax(0.0, m_alpha);
     }
     else {
         m_fontDraw = m_fontBig;
+        m_alpha_forHugeFont = 0.0;
+
+        double fadeOut = m_fadeOutTime * animationFPS;
+        if (elapsed > fadeOut) {
+            m_alpha = 1.0 - (elapsed - fadeOut) / (totalFrameCount - fadeOut);
+            m_alpha = std::fmax(0.0, m_alpha);
+        }
+        else {
+            m_alpha = 1.0;
+        }
     }
 
-    SetRect(&m_rect, static_cast<int>(p.x) - m_width / 2 - m_width / 3, static_cast<int>(p.y) - m_height - m_startOffsetY, static_cast<int>(p.x) + m_width / 2 - m_width / 3, static_cast<int>(p.y) - m_startOffsetY);
+    SetRect(&m_rect, static_cast<int>(p.x) - m_width / 2, static_cast<int>(p.y) - m_height, static_cast<int>(p.x) + m_width / 2, static_cast<int>(p.y));
 
     // We test inSight so late that even the unit is out of sight, its m_rect get updated
     if (0 >= camera_inSight(reinterpret_cast<void*>(stickTo))) {
@@ -152,6 +251,10 @@ void xp3::CritText::draw() {
     shadowRect.top += m_shadowWeight;
     shadowRect.bottom += m_shadowWeight;
 
-    m_fontDraw->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &shadowRect, DT_LEFT, D3DCOLOR_ARGB(200, 0, 0, 0));
-    m_fontDraw->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &m_rect, DT_LEFT, m_color);
+    m_fontDraw->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &shadowRect, DT_LEFT, D3DCOLOR_ARGB(static_cast<int>(200 * m_alpha), 0, 0, 0));
+    m_fontDraw->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &m_rect, DT_LEFT, D3DCOLOR_ARGB(static_cast<int>(m_a * m_alpha), m_r, m_g, m_b));
+
+    if (m_alpha_forHugeFont > 0.0) {
+        m_fontHuge->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &shadowRect, DT_LEFT, D3DCOLOR_ARGB(static_cast<int>(m_a * m_alpha_forHugeFont), m_r, m_g, m_b));
+    }
 }

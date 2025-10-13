@@ -246,6 +246,7 @@ float angleBetweenVectors(C3Vector& a, C3Vector& b);
 bool vectorsAreNear(C3Vector& a, C3Vector& b);
 bool vectorAlmostZero(C3Vector& vec);
 HWND vanilla1121_gameWindow();
+RECT vanilla1121_gameClientRect();
 uint32_t vanilla1121_worldFrame();
 C3Vector vanilla1121_worldToScreen(C3Vector& world);
 uint32_t vanilla1121_gameLocale();

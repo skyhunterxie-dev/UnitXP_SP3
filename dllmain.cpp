@@ -64,10 +64,10 @@ int __fastcall detoured_UnitXP(void* L) {
             uint8_t b = n >= 0.0 && n < 256.0 ? static_cast<uint8_t>(n) : 255;
 
             if (type == "crit") {
-                sceneEnd_addCritText(text, D3DCOLOR_XRGB(r, g, b));
+                sceneEnd_addCritText(text, r, g, b);
             }
             else {
-                sceneEnd_addSmallFloatingText(text, D3DCOLOR_XRGB(r, g, b));
+                sceneEnd_addSmallFloatingText(text, r, g, b);
             }
             lua_pushboolean(L, sceneEnd_isEnabled);
             return 1;

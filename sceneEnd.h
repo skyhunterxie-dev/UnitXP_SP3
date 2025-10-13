@@ -44,6 +44,6 @@ extern CREATEWORLDTEXT p_createWorldText;
 extern CREATEWORLDTEXT p_original_createWorldText;
 void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type, char const* text, uint32_t color, uint32_t unknown);
 
-void sceneEnd_addSmallFloatingText(std::string text, D3DCOLOR color = D3DCOLOR_XRGB(255, 255, 255));
-void sceneEnd_addCritText(std::string text, D3DCOLOR color = D3DCOLOR_XRGB(255, 255, 255));
+void sceneEnd_addSmallFloatingText(std::string text, int r = 255, int g = 255, int b = 255, int a = 255);
+void sceneEnd_addCritText(std::string text, int r = 255, int g = 255, int b = 255, int a = 255);
 std::string sceneEnd_debugText();
