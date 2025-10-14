@@ -469,6 +469,17 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
     case 4:
     case 5:
     {
+        if (type == 4) {
+            r = 0xff;
+            g = 0x33;
+            b = 0xcc;
+        }
+        else if (type == 5) {
+            r = 239;
+            g = 191;
+            b = 4;
+        }
+
         xp3::FloatingUpText newText(text, stickToGUID, r, g, b, 255, font, lastDXdevice);
         sortAddNewFloatingText(newText, floatingTexts);
         return;
