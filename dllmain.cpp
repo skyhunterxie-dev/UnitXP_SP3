@@ -514,7 +514,7 @@ int __fastcall detoured_UnitXP(void* L) {
         }
         else if (cmd == "gameLocale") {
             lua_pushnumber(L, vanilla1121_gameLocale());
-            return 2;
+            return 1;
         }
     }
     return p_original_UnitXP(L);
