@@ -31,7 +31,7 @@
 #include "edit_CWorld_Intersect.h"
 #include "weather.h"
 #include "polyfill.h"
-#include "sceneEnd.h"
+#include "sceneBegin_sceneEnd.h"
 
 using namespace std;
 
@@ -703,6 +703,10 @@ BOOL APIENTRY DllMain(HMODULE hModule,
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for createWorldText function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
         }
+        if (MH_CreateHook(p_sceneBegin, &detoured_sceneBegin, reinterpret_cast<LPVOID*>(&p_original_sceneBegin)) != MH_OK) {
+            MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for sceneBegin function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+            return FALSE;
+        }
         if (MH_EnableHook(MH_ALL_HOOKS) != MH_OK) {
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed when enabling hooks.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
@@ -717,6 +721,10 @@ BOOL APIENTRY DllMain(HMODULE hModule,
         if (lpReserved == NULL) {
             if (MH_DisableHook(MH_ALL_HOOKS) != MH_OK) {
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to disable hooks. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+                return FALSE;
+            }
+            if (MH_RemoveHook(p_sceneBegin) != MH_OK) {
+                MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for sceneBegin function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
             }
             if (MH_RemoveHook(p_createWorldText) != MH_OK) {

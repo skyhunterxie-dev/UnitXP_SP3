@@ -1,9 +1,9 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 #include "gameQuit.h"
 #include "timer.h"
 #include "LuaDebug.h"
-#include "sceneEnd.h"
+#include "sceneBegin_sceneEnd.h"
 
 FUNCTION_GAMEQUIT_0x41f9b0 p_gameQuit_0x41f9b0 = reinterpret_cast<FUNCTION_GAMEQUIT_0x41f9b0>(0x41f9b0);
 FUNCTION_GAMEQUIT_0x41f9b0 p_original_gameQuit_0x41f9b0 = NULL;

@@ -10,18 +10,15 @@
 #include <string>
 #include <sstream>
 
-#include "sceneEnd.h"
+#include "sceneBegin_sceneEnd.h"
 #include "utf8_to_utf16.h"
 #include "Vanilla1121_functions.h"
+#include "polyfill.h"
 
 static ID3DXFont* sceneEnd_font = NULL;
-static bool fontOnLost = false;
 static ID3DXFont* sceneEnd_fontBIG = NULL;
-static bool fontBIGOnLost = false;
 static ID3DXFont* sceneEnd_fontSmall = NULL;
-static bool fontSmallOnLost = false;
 static ID3DXFont* sceneEnd_fontHUGE = NULL;
-static bool fontHugeOnLost = false;
 static LPDIRECT3DDEVICE9 lastDXdevice = NULL;
 static std::list<xp3::FloatingUpText> floatingTexts{};
 static std::unordered_map<uint64_t, xp3::CritText> critTexts{};
@@ -73,109 +70,6 @@ static void sceneEnd_fontPreload(ID3DXFont* font) {
     font->PreloadTextW(utf8_to_utf16(u8"免疫").c_str(), 2);
 }
 
-typedef HRESULT(__stdcall* D3DDEVICERESET)(LPDIRECT3DDEVICE9 pSelf, D3DPRESENT_PARAMETERS* pPresentationParameters);
-static D3DDEVICERESET p_D3D_deviceReset = NULL;
-static D3DDEVICERESET p_original_D3D_deviceReset = NULL;
-HRESULT __stdcall detoured_D3D_deviceReset(LPDIRECT3DDEVICE9 pSelf, D3DPRESENT_PARAMETERS* pPresentationParameters) {
-
-    // The strange thing is that this function never get called
-    // I don't understand how the game handles Alt+Tab in Fullscreen mode
-
-    if (sceneEnd_font != NULL && fontOnLost == false) {
-        sceneEnd_font->OnLostDevice();
-        fontOnLost = true;
-    }
-    if (sceneEnd_fontBIG != NULL && fontBIGOnLost == false) {
-        sceneEnd_fontBIG->OnLostDevice();
-        fontBIGOnLost = true;
-    }
-    if (sceneEnd_fontSmall != NULL && fontSmallOnLost == false) {
-        sceneEnd_fontSmall->OnLostDevice();
-        fontSmallOnLost = true;
-    }
-    if (sceneEnd_fontHUGE != NULL && fontHugeOnLost == false) {
-        sceneEnd_fontHUGE->OnLostDevice();
-        fontHugeOnLost = true;
-    }
-
-    HRESULT ret = p_original_D3D_deviceReset(pSelf, pPresentationParameters);
-
-    if (SUCCEEDED(ret)) {
-        HRESULT rFont = sceneEnd_font->OnResetDevice();
-        HRESULT rFontBIG = sceneEnd_fontBIG->OnResetDevice();
-        HRESULT rFontSmall = sceneEnd_fontSmall->OnResetDevice();
-        HRESULT rFontHUGE = sceneEnd_fontHUGE->OnResetDevice();
-        if (rFont == S_OK && rFontBIG == S_OK && rFontSmall == S_OK && rFontHUGE == S_OK) {
-            fontOnLost = false;
-            fontBIGOnLost = false;
-            fontSmallOnLost = false;
-            fontHugeOnLost = false;
-        }
-        else {
-            // If reset failed, we try to reload
-            if (sceneEnd_reloadFont(sceneEnd_fontSize)) {
-                fontOnLost = false;
-                fontBIGOnLost = false;
-                fontSmallOnLost = false;
-                fontHugeOnLost = false;
-            }
-            else {
-                MessageBoxW(NULL, utf8_to_utf16(u8"Failed to reset nor reload font during D3D device reset.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-                sceneEnd_isEnabled = false;
-            }
-        }
-    }
-    return ret;
-}
-
-typedef ULONG(__stdcall* D3DDEVICERELEASE)(LPDIRECT3DDEVICE9 pSelf);
-static D3DDEVICERELEASE p_D3D_deviceRelease = NULL;
-static D3DDEVICERELEASE p_original_D3D_deviceRelease = NULL;
-ULONG __stdcall detoured_D3D_deviceRelease(LPDIRECT3DDEVICE9 pSelf) {
-    if (p_D3D_deviceReset != NULL) {
-        if (MH_DisableHook(p_D3D_deviceReset) != MH_OK) {
-            MessageBoxW(NULL, utf8_to_utf16(u8"Failed to disable hook for D3D device Reset function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-            sceneEnd_isEnabled = false;
-        }
-        if (MH_RemoveHook(p_D3D_deviceReset) != MH_OK) {
-            MessageBoxW(NULL, utf8_to_utf16(u8"Failed to remove hook for D3D device Reset function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-            sceneEnd_isEnabled = false;
-        }
-        p_D3D_deviceReset = NULL;
-        p_original_D3D_deviceReset = NULL;
-    }
-    if (p_D3D_deviceRelease != NULL) {
-        if (MH_DisableHook(p_D3D_deviceRelease) != MH_OK) {
-            MessageBoxW(NULL, utf8_to_utf16(u8"Failed to disable hook for D3D device Release function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-            sceneEnd_isEnabled = false;
-            return p_original_D3D_deviceRelease(pSelf);
-        }
-        if (MH_RemoveHook(p_D3D_deviceRelease) != MH_OK) {
-            MessageBoxW(NULL, utf8_to_utf16(u8"Failed to remove hook for D3D device Release function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-            sceneEnd_isEnabled = false;
-        }
-        p_D3D_deviceRelease = NULL;
-        p_original_D3D_deviceRelease = NULL;
-
-    }
-
-    void** vtable = *reinterpret_cast<void***>(pSelf);
-    auto p_currentRelease = reinterpret_cast<D3DDEVICERELEASE>(vtable[2]);
-
-    if (p_currentRelease != &detoured_D3D_deviceRelease) {
-        return p_currentRelease(pSelf);
-    }
-    else {
-        MessageBoxW(NULL, utf8_to_utf16(u8"Somehow D3D device Release function is still pointing to detoured function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-
-        // We can't do much as we don't have a working Release()
-        sceneEnd_isEnabled = false;
-
-        // We return 1 indicating reference count isn't touching zero so that this object might stand in memory
-        return 1;
-    }
-}
-
 static void sceneEnd_unloadFonts() {
     if (sceneEnd_font != NULL) {
         sceneEnd_font->Release();
@@ -218,7 +112,6 @@ bool sceneEnd_reloadFont(int fontSize) {
             return false;
         }
         sceneEnd_fontPreload(sceneEnd_font);
-        fontOnLost = false;
     }
 
     if (sceneEnd_fontBIG == NULL) {
@@ -227,7 +120,6 @@ bool sceneEnd_reloadFont(int fontSize) {
             return false;
         }
         sceneEnd_fontPreload(sceneEnd_fontBIG);
-        fontBIGOnLost = false;
     }
 
     if (sceneEnd_fontSmall == NULL) {
@@ -236,7 +128,6 @@ bool sceneEnd_reloadFont(int fontSize) {
             return false;
         }
         sceneEnd_fontPreload(sceneEnd_fontSmall);
-        fontSmallOnLost = false;
     }
 
     if (sceneEnd_fontHUGE == NULL) {
@@ -245,79 +136,41 @@ bool sceneEnd_reloadFont(int fontSize) {
             return false;
         }
         sceneEnd_fontPreload(sceneEnd_fontHUGE);
-        fontHugeOnLost = false;
     }
 
     return true;
 }
 
+ISCENEBEGIN p_sceneBegin = reinterpret_cast<ISCENEBEGIN>(0x5a1680);
+ISCENEBEGIN p_original_sceneBegin = NULL;
+void __fastcall detoured_sceneBegin(uint32_t CGxDevice, void* ignored, uint32_t unknown) {
+    // This test is the same as 0x5a1689
+    if (0 == *reinterpret_cast<uint32_t*>(CGxDevice + 0xf2c)) {
+        LPDIRECT3DDEVICE9 dxDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(*reinterpret_cast<uint32_t*>(CGxDevice + 0x38a8));
+        if (D3D_OK != dxDevice->TestCooperativeLevel()) {
+            sceneEnd_unloadFonts();
+        }
+    }
+    p_original_sceneBegin(CGxDevice, unknown);
+}
+
 ISCENEEND p_sceneEnd = reinterpret_cast<ISCENEEND>(0x5a17a0);
 ISCENEEND p_original_sceneEnd = NULL;
-void __fastcall detoured_sceneEnd(uint32_t CGxDevice) {
+void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
     if (*reinterpret_cast<uint32_t*>(CGxDevice + 0x3a38) != NULL && sceneEnd_isEnabled) {
         LPDIRECT3DDEVICE9 dxDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(*reinterpret_cast<uint32_t*>(CGxDevice + 0x38a8));
-
-        if (dxDevice->TestCooperativeLevel() != D3D_OK) {
-            sceneEnd_unloadFonts();
-            p_original_sceneEnd(CGxDevice);
-            return;
-        }
 
         if (dxDevice != lastDXdevice) {
             lastDXdevice = dxDevice;
 
-            void** vtable = *reinterpret_cast<void***>(dxDevice);
-            p_D3D_deviceReset = reinterpret_cast<D3DDEVICERESET>(vtable[16]);
-            if (MH_CreateHook(p_D3D_deviceReset, &detoured_D3D_deviceReset, reinterpret_cast<LPVOID*>(&p_original_D3D_deviceReset)) != MH_OK) {
-                MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for D3D device Reset function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-                sceneEnd_isEnabled = false;
-                lastDXdevice = NULL;
-                p_D3D_deviceReset = NULL;
-                p_original_D3D_deviceReset = NULL;
-                p_original_sceneEnd(CGxDevice);
-                return;
-            }
-            if (MH_EnableHook(p_D3D_deviceReset) != MH_OK) {
-                MessageBoxW(NULL, utf8_to_utf16(u8"Failed to enable hook for D3D device Reset function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-                MH_RemoveHook(p_D3D_deviceReset);
-                sceneEnd_isEnabled = false;
-                lastDXdevice = NULL;
-                p_D3D_deviceReset = NULL;
-                p_original_D3D_deviceReset = NULL;
-                p_original_sceneEnd(CGxDevice);
-                return;
-            }
-
-            p_D3D_deviceRelease = reinterpret_cast<D3DDEVICERELEASE>(vtable[2]);
-            if (MH_CreateHook(p_D3D_deviceRelease, &detoured_D3D_deviceRelease, reinterpret_cast<LPVOID*>(&p_original_D3D_deviceRelease)) != MH_OK) {
-                MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for D3D device Release function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-                sceneEnd_isEnabled = false;
-                lastDXdevice = NULL;
-                p_D3D_deviceRelease = NULL;
-                p_original_D3D_deviceRelease = NULL;
-                p_original_sceneEnd(CGxDevice);
-                return;
-            }
-            if (MH_EnableHook(p_D3D_deviceRelease) != MH_OK) {
-                MessageBoxW(NULL, utf8_to_utf16(u8"Failed to enable hook for D3D device Release function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-                MH_RemoveHook(p_D3D_deviceRelease);
-                sceneEnd_isEnabled = false;
-                lastDXdevice = NULL;
-                p_D3D_deviceRelease = NULL;
-                p_original_D3D_deviceRelease = NULL;
-                p_original_sceneEnd(CGxDevice);
-                return;
-            }
-
-            if (false == sceneEnd_reloadFont(sceneEnd_fontSize)) {
-                sceneEnd_isEnabled = false;
-                lastDXdevice = NULL;
-                p_original_sceneEnd(CGxDevice);
-                return;
-            }
+            sceneEnd_unloadFonts();
         }
 
         if (sceneEnd_font == NULL || sceneEnd_fontBIG == NULL || sceneEnd_fontSmall == NULL) {
+            if (lastDXdevice->TestCooperativeLevel() != D3D_OK) {
+                p_original_sceneEnd(CGxDevice);
+                return;
+            }
             if (false == sceneEnd_reloadFont(sceneEnd_fontSize)) {
                 sceneEnd_isEnabled = false;
                 lastDXdevice = NULL;
@@ -353,7 +206,7 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice) {
                 }
             }
 
-            if (update > 0 && fontSmallOnLost == false) {
+            if (update > 0) {
                 it->draw();
             }
             it++;
@@ -377,7 +230,7 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice) {
                 }
             }
 
-            if (update > 0 && fontOnLost == false) {
+            if (update > 0) {
                 it->draw();
             }
             it++;
@@ -390,7 +243,7 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice) {
                 it = critTexts.erase(it);
                 continue;
             }
-            if (update > 0 && fontBIGOnLost == false) {
+            if (update > 0) {
                 it->second.draw();
             }
             it++;
