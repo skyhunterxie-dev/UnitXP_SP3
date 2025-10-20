@@ -81,6 +81,9 @@ int xp3::FloatingUpText::update(ID3DXFont* font, LPDIRECT3DDEVICE9 device) {
 
         pos.z += h;
     }
+    else {
+        pos.z += 0.1f;
+    }
 
     C3Vector p = vanilla1121_worldToScreen(pos);
     if (p.x < 0.0f || p.y < 0.0f) {
