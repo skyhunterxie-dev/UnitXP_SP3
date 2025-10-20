@@ -25,6 +25,7 @@ std::string getPolyfillDebug();
 
 extern bool ERMS;
 extern bool AVX;
+extern bool SSE2;
 void polyfill_checkCPU();
 
 typedef float* (__fastcall* OPERATOR_MULTIPLY_1)(float*, float*, float*);

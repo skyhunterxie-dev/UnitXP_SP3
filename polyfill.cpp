@@ -11,6 +11,7 @@
 
 bool ERMS = false;
 bool AVX = false;
+bool SSE2 = false;
 void polyfill_checkCPU() {
     // By Chat GPT
 
@@ -25,6 +26,8 @@ void polyfill_checkCPU() {
     ERMS = (cpuInfo[1] & (1 << 9)) != 0;
 
     __cpuid(cpuInfo, 1);
+
+    SSE2 = (cpuInfo[3] & (1 << 26)) != 0;
 
     bool osUsesXSAVE_XRSTORE = (cpuInfo[2] & (1 << 27)) != 0;
     bool cpuAVXSupport = (cpuInfo[2] & (1 << 28)) != 0;

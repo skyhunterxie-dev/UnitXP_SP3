@@ -547,6 +547,10 @@ BOOL APIENTRY DllMain(HMODULE hModule,
         perfReset();
 
         polyfill_checkCPU();
+        if (SSE2 == false) {
+            MessageBoxW(NULL, utf8_to_utf16(u8"UnitXP Service Pack 3 requires a CPU which supports SSE2 instructions. The loading procedure is quiting.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+            return FALSE;
+        }
 
         editCamera_init();
 
