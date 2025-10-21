@@ -23,9 +23,9 @@ typedef HRESULT (WINAPI* LPD3DXCREATEFFONTW)(
     LPCWSTR                 pFaceName,
     LPD3DXFONT*             ppFont);
 extern LPD3DXCREATEFFONTW p_D3DCreateFontW;
-extern bool sceneEnd_isEnabled;
+extern bool scene_isEnabled;
 extern bool sceneEnd_useXP3combatText;
-extern bool sceneEnd_hideEXPtext;
+extern bool scene_hideEXPtext;
 void sceneEnd_init();
 void sceneEnd_end();
 bool sceneEnd_reloadFont(int fontSize);

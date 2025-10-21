@@ -69,7 +69,7 @@ int __fastcall detoured_UnitXP(void* L) {
             else {
                 sceneEnd_addSmallFloatingText(text, r, g, b);
             }
-            lua_pushboolean(L, sceneEnd_isEnabled);
+            lua_pushboolean(L, scene_isEnabled);
             return 1;
         }
         else if (cmd == "inSight" && lua_gettop(L) >= 3) {
@@ -455,12 +455,12 @@ int __fastcall detoured_UnitXP(void* L) {
         else if (cmd == "hideEXPtext") {
             string subcmd{ lua_tostring(L, 2) };
             if (subcmd == "enable") {
-                sceneEnd_hideEXPtext = true;
+                scene_hideEXPtext = true;
             }
             if (subcmd == "disable") {
-                sceneEnd_hideEXPtext = false;
+                scene_hideEXPtext = false;
             }
-            lua_pushboolean(L, sceneEnd_hideEXPtext);
+            lua_pushboolean(L, scene_hideEXPtext);
             return 1;
         }
         else if (cmd == "combatTextSP3") {
