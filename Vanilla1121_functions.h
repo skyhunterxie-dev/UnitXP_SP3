@@ -158,6 +158,8 @@ double luaL_checknumber(void* L, int index);
 // WoW C function
 // Get GUID from UnitID
 uint64_t UnitGUID(const char* unitID);
+// Get GUID from unit
+uint64_t vanilla1121_unitGUID(uint32_t unit);
 // Test intersect in world, p1 and p2 for input, intersectPoint and distance for output.
 bool CWorld_Intersect(const C3Vector* p1, const C3Vector* p2, C3Vector* intersectPoint, float* distance, uint32_t intersectFlag = 0x100111);
 // Target the unit with GUID
@@ -252,3 +254,5 @@ C3Vector vanilla1121_worldToScreen(C3Vector& world);
 uint32_t vanilla1121_gameLocale();
 // Return empty string for error
 std::string vanilla1121_getCVar(const std::string& name);
+// Return "error" for error, or same string as Lua IsInInstance()
+std::string vanilla1121_isInInstance();

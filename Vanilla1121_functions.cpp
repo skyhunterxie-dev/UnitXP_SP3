@@ -928,3 +928,33 @@ std::string vanilla1121_getCVar(const std::string& name) {
     std::string result{ *reinterpret_cast<char**>(cvar + 0x20) };
     return result;
 }
+
+uint64_t vanilla1121_unitGUID(uint32_t unit) {
+    return *reinterpret_cast<uint64_t*>(unit + 0x30);
+}
+
+std::string vanilla1121_isInInstance() {
+    int test1 = *reinterpret_cast<int*>(0xb4e378);
+    int test2 = *reinterpret_cast<int*>(0xc0daac);
+    if (-1 < test1 && test1 <= test2) {
+        uint32_t data1 = *reinterpret_cast<uint32_t*>(0xc0daa8);
+        uint32_t data2 = *reinterpret_cast<int*>(data1 + test1 * 4);
+        if (data2 != NULL) {
+            uint32_t data3 = *reinterpret_cast<uint32_t*>(data2 + 8);
+            if (data3 < 4) {
+                char* namePtr = *reinterpret_cast<char**>(0x83de58 + data3 * 4);
+                std::string result{ namePtr };
+                return result;
+            }
+            else {
+                return "none";
+            }
+        }
+        else {
+            return "error";
+        }
+    }
+    else {
+        return "error";
+    }
+}

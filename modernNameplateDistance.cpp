@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 #include "Vanilla1121_functions.h"
 #include "modernNameplateDistance.h"
@@ -31,11 +31,11 @@ static bool nameplatesHasMarkOnThem = false;
 
 // -1 for error, 0 for no, 1 for yes
 static int shouldHaveNameplate(void* voidUnit) {
-    if (!voidUnit) {
+    if (voidUnit == NULL || (reinterpret_cast<intptr_t>(voidUnit) & 1) != 0) {
         return -1;
     }
 
-    uint64_t guidUnderNameplate = *reinterpret_cast<uint64_t*>(reinterpret_cast<uint32_t>(voidUnit) + 0x30);
+    uint64_t guidUnderNameplate = vanilla1121_unitGUID(reinterpret_cast<uint32_t>(voidUnit));
 
     // It's super complex about the combination of prioritize target or/and mark
     if (prioritizeMarkedNameplate || prioritizeTargetNameplate) {

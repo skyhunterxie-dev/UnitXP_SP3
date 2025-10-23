@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 #define _USE_MATH_DEFINES
 
@@ -312,9 +312,12 @@ int camera_inSight(const void* unitvoid) {
         return -1;
     }
 
-    cameraCacheHousekeeping();
+    uint64_t guid = vanilla1121_unitGUID(unit);
+    if (guid == UnitGUID("player")) {
+        return 1;
+    }
 
-    uint64_t guid = *reinterpret_cast<uint64_t*>(unit + 0x30);
+    cameraCacheHousekeeping();
 
     LARGE_INTEGER now = {};
     QueryPerformanceCounter(&now);
@@ -368,10 +371,13 @@ int UnitXP_inSight(const void* unit0void, const void* unit1void) {
         return -1;
     }
 
-    unitCacheHousekeeping();
+    uint64_t guid0 = vanilla1121_unitGUID(unit0);
+    uint64_t guid1 = vanilla1121_unitGUID(unit1);
+    if (guid0 == guid1) {
+        return 1;
+    }
 
-    uint64_t guid0 = *reinterpret_cast<uint64_t*>(unit0 + 0x30);
-    uint64_t guid1 = *reinterpret_cast<uint64_t*>(unit1 + 0x30);
+    unitCacheHousekeeping();
 
     LARGE_INTEGER now = {};
     QueryPerformanceCounter(&now);

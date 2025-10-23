@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 #include <vector>
 #include <algorithm>
@@ -25,7 +25,7 @@ bool targetNearestEnemy(float distanceLimit) {
     void* player = reinterpret_cast<void*>(vanilla1121_getVisiableObject(UnitGUID(u8"player")));
 
     while (i != 0 && (i & 1) == 0) {
-        uint64_t currentObjectGUID = *reinterpret_cast<uint64_t*>(i + 0x30);
+        uint64_t currentObjectGUID = vanilla1121_unitGUID(i);
         int type = vanilla1121_objectType(i);
 
         // As of https://github.com/allfoxwy/UnitXP_SP3/issues/5
@@ -89,7 +89,7 @@ bool targetEnemyWithMostHP(float distanceLimit) {
     void* player = reinterpret_cast<void*>(vanilla1121_getVisiableObject(UnitGUID(u8"player")));
 
     while (i != 0 && (i & 1) == 0) {
-        uint64_t currentObjectGUID = *reinterpret_cast<uint64_t*>(i + 0x30);
+        uint64_t currentObjectGUID = vanilla1121_unitGUID(i);
         int type = vanilla1121_objectType(i);
 
         // As of https://github.com/allfoxwy/UnitXP_SP3/issues/5
@@ -155,7 +155,7 @@ bool targetWorldBoss(float distanceLimit) {
     void* player = reinterpret_cast<void*>(vanilla1121_getVisiableObject(UnitGUID(u8"player")));
 
     while (i != 0 && (i & 1) == 0) {
-        uint64_t currentObjectGUID = *reinterpret_cast<uint64_t*>(i + 0x30);
+        uint64_t currentObjectGUID = vanilla1121_unitGUID(i);
         int type = vanilla1121_objectType(i);
 
         // As of https://github.com/allfoxwy/UnitXP_SP3/issues/5
@@ -355,7 +355,7 @@ bool targetEnemyInCycle(MOB_SELECTFUNCTION selectFunction) {
     }
 
     while (i != 0 && (i & 1) == 0) {
-        uint64_t currentObjectGUID = *reinterpret_cast<uint64_t*>(i + 0x30);
+        uint64_t currentObjectGUID = vanilla1121_unitGUID(i);
         int type = vanilla1121_objectType(i);
 
         // As of https://github.com/allfoxwy/UnitXP_SP3/issues/5
@@ -435,7 +435,7 @@ bool targetMarkedEnemyInCycle(MOB_SELECTFUNCTION_WITH_MARK selectFunction, strin
     uint64_t lastTarget = vanilla1121_unitTargetGUID(vanilla1121_getVisiableObject(UnitGUID("player")));
 
     while (i != 0 && (i & 1) == 0) {
-        uint64_t currentObjectGUID = *reinterpret_cast<uint64_t*>(i + 0x30);
+        uint64_t currentObjectGUID = vanilla1121_unitGUID(i);
         int type = vanilla1121_objectType(i);
 
         // As of https://github.com/allfoxwy/UnitXP_SP3/issues/5
@@ -514,7 +514,7 @@ bool targetEnemyConsideringDistance(MOB_SELECTFUNCTION selectFunction) {
     }
 
     while (i != 0 && (i & 1) == 0) {
-        uint64_t currentObjectGUID = *reinterpret_cast<uint64_t*>(i + 0x30);
+        uint64_t currentObjectGUID = vanilla1121_unitGUID(i);
         int type = vanilla1121_objectType(i);
 
         // As of https://github.com/allfoxwy/UnitXP_SP3/issues/5
