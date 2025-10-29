@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <cstdint>
 
@@ -12,5 +12,4 @@ extern NTDELAYEXECUTION NtDelayExecution;
 int initFPScap();
 
 extern LARGE_INTEGER targetFrameInterval;
-
-
+extern LARGE_INTEGER backgroundFrameInterval;

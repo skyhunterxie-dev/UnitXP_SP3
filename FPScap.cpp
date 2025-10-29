@@ -1,21 +1,31 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 #include <libloaderapi.h>
 
 #include "FPScap.h"
 #include "performanceProfiling.h"
+#include "Vanilla1121_functions.h"
 
 GXSCENEPRESENT_0x58a960 p_GxScenePresent_0x58a960 = reinterpret_cast<GXSCENEPRESENT_0x58a960>(0x58a960);
 GXSCENEPRESENT_0x58a960 p_original_GxScenePresent_0x58a960 = NULL;
 NTDELAYEXECUTION NtDelayExecution = NULL;
 LARGE_INTEGER targetFrameInterval = {};
+LARGE_INTEGER backgroundFrameInterval = {};
 
 static LARGE_INTEGER nextFrameTime = {};
 
 void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
-    if (targetFrameInterval.QuadPart < 1) {
-        p_original_GxScenePresent_0x58a960(unknown);
-        return;
+    if (vanilla1121_gameInForeground()) {
+        if (targetFrameInterval.QuadPart < 1) {
+            p_original_GxScenePresent_0x58a960(unknown);
+            return;
+        }
+    }
+    else {
+        if (backgroundFrameInterval.QuadPart < 1) {
+            p_original_GxScenePresent_0x58a960(unknown);
+            return;
+        }
     }
 
     // From https://github.com/doitsujin/dxvk/blob/4799558d322f67d1ff8f2c3958ff03e776b65bc6/src/util/util_fps_limiter.cpp#L51
@@ -36,13 +46,21 @@ void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
 
     p_original_GxScenePresent_0x58a960(unknown);
 
-    nextFrameTime.QuadPart = (now.QuadPart < nextFrameTime.QuadPart + targetFrameInterval.QuadPart)
-        ? nextFrameTime.QuadPart + targetFrameInterval.QuadPart
-        : now.QuadPart + targetFrameInterval.QuadPart;
+    if (vanilla1121_gameInForeground()) {
+        nextFrameTime.QuadPart = (now.QuadPart < nextFrameTime.QuadPart + targetFrameInterval.QuadPart)
+            ? nextFrameTime.QuadPart + targetFrameInterval.QuadPart
+            : now.QuadPart + targetFrameInterval.QuadPart;
+    }
+    else {
+        nextFrameTime.QuadPart = (now.QuadPart < nextFrameTime.QuadPart + backgroundFrameInterval.QuadPart)
+            ? nextFrameTime.QuadPart + backgroundFrameInterval.QuadPart
+            : now.QuadPart + backgroundFrameInterval.QuadPart;
+    }
 }
 
 int initFPScap() {
     targetFrameInterval.QuadPart = 0;
+    backgroundFrameInterval.QuadPart = 0;
     nextFrameTime.QuadPart = 0;
 
     // from https://github.com/doitsujin/dxvk/blob/4799558d322f67d1ff8f2c3958ff03e776b65bc6/src/util/util_sleep.cpp#L38

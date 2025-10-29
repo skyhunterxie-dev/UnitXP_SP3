@@ -64,10 +64,16 @@ int __fastcall detoured_UnitXP(void* L) {
             uint8_t b = n >= 0.0 && n < 256.0 ? static_cast<uint8_t>(n) : 255;
 
             if (type == "crit") {
-                sceneEnd_addCritText(text, r, g, b);
+                sceneEnd_addCritText(text, r, g, b, 255);
+            }
+            else if (type == "downward") {
+                sceneEnd_addSmallFloatingText(text, r, g, b, 255, worldText::down);
+            }
+            else if (type == "arc") {
+                sceneEnd_addSmallFloatingText(text, r, g, b, 255, worldText::arc);
             }
             else {
-                sceneEnd_addSmallFloatingText(text, r, g, b);
+                sceneEnd_addSmallFloatingText(text, r, g, b, 255, worldText::up);
             }
             lua_pushboolean(L, scene_isEnabled);
             return 1;
@@ -237,6 +243,14 @@ int __fastcall detoured_UnitXP(void* L) {
             lua_pushnil(L);
             return 1;
         }
+        else if (cmd == "debug") {
+            string subcmd{ lua_tostring(L,2) };
+            if (subcmd == "breakpoint") {
+                int result = LuaDebug_breakpoint();
+                lua_pushnumber(L, result);
+                return 1;
+            }
+        }
         else if (cmd == "modernNameplateDistance") {
             string subcmd{ lua_tostring(L, 2) };
             if (subcmd == "enable") {
@@ -303,7 +317,6 @@ int __fastcall detoured_UnitXP(void* L) {
             lua_pushboolean(L, showInCombatNameplatesNearPlayer);
             return 1;
         }
-
         else if (cmd == "FPScap") {
             if (lua_isnumber(L, 2)) {
                 double v = lua_tonumber(L, 2);
@@ -325,13 +338,26 @@ int __fastcall detoured_UnitXP(void* L) {
             }
             return 1;
         }
-        else if (cmd == "debug") {
-            string subcmd{ lua_tostring(L,2) };
-            if (subcmd == "breakpoint") {
-                int result = LuaDebug_breakpoint();
-                lua_pushnumber(L, result);
-                return 1;
+        else if (cmd == "backgroundFPScap") {
+            if (lua_isnumber(L, 2)) {
+                double v = lua_tonumber(L, 2);
+                if (v < 1) {
+                    backgroundFrameInterval.QuadPart = 0;
+                }
+                else if (v > 500) {
+                    backgroundFrameInterval.QuadPart = getPerformanceCounterFrequency().QuadPart / 500;
+                }
+                else {
+                    backgroundFrameInterval.QuadPart = getPerformanceCounterFrequency().QuadPart / static_cast<LONGLONG>(v);
+                }
             }
+            if (backgroundFrameInterval.QuadPart > 0) {
+                lua_pushnumber(L, static_cast<double>(getPerformanceCounterFrequency().QuadPart / backgroundFrameInterval.QuadPart));
+            }
+            else {
+                lua_pushnumber(L, 0);
+            }
+            return 1;
         }
         else if (cmd == "cameraHeight") {
             string subcmd{ lua_tostring(L, 2) };
@@ -484,6 +510,18 @@ int __fastcall detoured_UnitXP(void* L) {
                 lua_pushboolean(L, r);
                 return 2;
             }
+            if (subcmd == "setNameplateHeight" && lua_gettop(L) >= 3 && lua_isnumber(L, 3)) {
+                double height = lua_tonumber(L, 3);
+                if (height <= 0.0) {
+                    height = 0.0;
+                }
+                if (height >= 256.0) {
+                    height = 256.0;
+                }
+                worldText::nameplateHeight = height;
+                lua_pushnumber(L, worldText::nameplateHeight);
+                return 1;
+            }
             lua_pushboolean(L, sceneEnd_useXP3combatText);
             return 1;
         }
@@ -548,7 +586,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 
         polyfill_checkCPU();
         if (SSE2 == false) {
-            MessageBoxW(NULL, utf8_to_utf16(u8"UnitXP Service Pack 3 requires a CPU which supports SSE2 instructions. The loading procedure is quiting.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+            MessageBoxW(NULL, utf8_to_utf16(u8"UnitXP Service Pack 3 requires a CPU supporting SSE2 instructions. The loading procedure is quiting.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
         }
 
@@ -707,6 +745,10 @@ BOOL APIENTRY DllMain(HMODULE hModule,
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for sceneBegin function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
         }
+        if (MH_CreateHook(p_fun_0x7c29f0, &detoured_fun_0x7c29f0, reinterpret_cast<LPVOID*>(&p_original_fun_0x7c29f0)) != MH_OK) {
+            MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for fun_0x7c29f0 function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+            return FALSE;
+        }
         if (MH_EnableHook(MH_ALL_HOOKS) != MH_OK) {
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed when enabling hooks.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
@@ -721,6 +763,10 @@ BOOL APIENTRY DllMain(HMODULE hModule,
         if (lpReserved == NULL) {
             if (MH_DisableHook(MH_ALL_HOOKS) != MH_OK) {
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to disable hooks. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+                return FALSE;
+            }
+            if (MH_RemoveHook(p_fun_0x7c29f0) != MH_OK) {
+                MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for fun_0x7c29f0 function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
             }
             if (MH_RemoveHook(p_sceneBegin) != MH_OK) {

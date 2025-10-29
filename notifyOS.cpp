@@ -15,12 +15,8 @@ using namespace std;
 #include "Vanilla1121_functions.h"
 #include "notifyOS.h"
 
-static bool gameInForeground() {
-    return GetForegroundWindow() == vanilla1121_gameWindow();
-}
-
 void flashTaskbarIcon() {
-    if (gameInForeground() == true) {
+    if (vanilla1121_gameInForeground() == true) {
         return;
     }
 
@@ -36,7 +32,7 @@ void flashTaskbarIcon() {
 
 // Play a system sound
 bool playSystemSound(const string soundName) {
-    if (gameInForeground() == true) {
+    if (vanilla1121_gameInForeground() == true) {
         return false;
     }
 

@@ -17,7 +17,7 @@
 * when it starts. So the original design is flipped. Replace them with std::memcpy and compile the mod with a modern compiler
 * should fix it.
 * 
-* Some address are from libSiliconPatch. I tried to reach its author but received no reply.
+* Some patches are from libSiliconPatch.
 */
 
 extern uint64_t polyfill_debugCounter;
@@ -135,3 +135,8 @@ typedef void(WINAPI* ENTERCRITICALSECTION)(LPCRITICAL_SECTION);
 extern ENTERCRITICALSECTION p_enterCriticalSection;
 extern ENTERCRITICALSECTION p_original_enterCriticalSection;
 void WINAPI detoured_enterCriticalSection(LPCRITICAL_SECTION objPtr);
+
+typedef uint16_t(__fastcall* FUNTYPE_0x7c29f0)(float*, uint32_t, uint16_t*, float*, float*, float);
+extern FUNTYPE_0x7c29f0 p_fun_0x7c29f0;
+extern FUNTYPE_0x7c29f0 p_original_fun_0x7c29f0;
+uint16_t __fastcall detoured_fun_0x7c29f0(float* ray_data, uint32_t vertex_base, uint16_t* indices, float* out_distance, float* out_uv, float tolerance);

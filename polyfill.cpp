@@ -325,7 +325,7 @@ void __fastcall detoured_transformAABox(float* C33Mat, float* C3Vec_A, float* C3
     ptr[0] = C33Mat;
     ptr[1] = C3Vec_A;
     ptr[2] = C3Vec_B;
-    
+
     for (uint32_t outer_i = 0; outer_i < 3; outer_i++, CAAbox_B++) {
         for (uint32_t inner_i = 0; inner_i < 3; inner_i++) {
             double test1 = static_cast<double>(ptr[inner_i][outer_i]) * static_cast<double>(CAAbox_A[inner_i]);
@@ -490,4 +490,67 @@ void WINAPI detoured_enterCriticalSection(LPCRITICAL_SECTION objPtr) {
         SetCriticalSectionSpinCount(objPtr, criticalSectionSpin);
     }
     p_original_enterCriticalSection(objPtr);
+}
+
+// This patch is contributed by akamizu. It was originaly found on Mac.
+// Thank you akamizu!
+FUNTYPE_0x7c29f0 p_fun_0x7c29f0 = reinterpret_cast<FUNTYPE_0x7c29f0>(0x7c29f0);
+FUNTYPE_0x7c29f0 p_original_fun_0x7c29f0 = NULL;
+uint16_t __fastcall detoured_fun_0x7c29f0(float* ray_data, uint32_t vertex_base, uint16_t* indices, float* out_distance, float* out_uv, float tolerance) {
+    const C3Vector origin = vectorFromFloatArray(ray_data);
+    const C3Vector direction = vectorFromFloatArray(ray_data + 3);
+
+    const uint16_t idx0 = indices[0];
+    const uint16_t idx1 = indices[1];
+    const uint16_t idx2 = indices[2];
+
+    const C3Vector v0 = vectorFromFloatArrayByIndex(vertex_base, idx0);
+    const C3Vector v1 = vectorFromFloatArrayByIndex(vertex_base, idx1);
+    const C3Vector v2 = vectorFromFloatArrayByIndex(vertex_base, idx2);
+
+    const C3Vector edge1 = vectorSubtract(v1, v0);
+    const C3Vector edge2 = vectorSubtract(v2, v0);
+
+    const C3Vector pvec = vectorCrossProduct(direction, edge2);
+    const float det = vectorDotProduct(edge1, pvec);
+
+    const float det_min = *reinterpret_cast<const float*>(0x81d9bc);
+    const float det_max = *reinterpret_cast<const float*>(0x80e2e4);
+
+    if (!(det <= det_min || det >= det_max)) {
+        return 0;
+    }
+
+    const float one = *reinterpret_cast<const float*>(0x7ff9d8);
+    const float inv_det = one / det;
+
+    const C3Vector tvec = vectorSubtract(origin, v0);
+    const float u = vectorDotProduct(tvec, pvec) * inv_det;
+
+    const float neg_tol = -tolerance;
+    const float pos_tol = tolerance + one;
+
+    if (u < neg_tol || u > pos_tol) {
+        return 0;
+    }
+
+    const C3Vector qvec = vectorCrossProduct(tvec, edge1);
+    const float v = vectorDotProduct(direction, qvec) * inv_det;
+
+    if (v < neg_tol || (v + u) > pos_tol) {
+        return 0;
+    }
+
+    const float t = vectorDotProduct(qvec, edge2) * inv_det;
+
+    if (out_distance != NULL) {
+        *out_distance = t;
+    }
+
+    if (out_uv != NULL) {
+        out_uv[0] = u;
+        out_uv[1] = v;
+    }
+
+    return 1;
 }

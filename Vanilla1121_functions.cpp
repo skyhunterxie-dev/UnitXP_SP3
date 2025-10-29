@@ -739,7 +739,6 @@ float vectorLength(C3Vector& vec) {
 
 C3Vector vectorCrossProduct(const C3Vector& a, const C3Vector& b) {
     C3Vector result = {};
-
     result.x = a.y * b.z - a.z * b.y;
     result.y = -(a.x * b.z - a.z * b.x);
     result.z = a.x * b.y - a.y * b.x;
@@ -957,4 +956,60 @@ std::string vanilla1121_isInInstance() {
     else {
         return "error";
     }
+}
+
+void vanilla1121_unitDisable(uint32_t unit) {
+    if (unit == NULL || (unit & 1) != 0) {
+        return;
+    }
+
+    // All thanks to pepopo978
+    typedef void(__thiscall* DISABLEUNIT)(uint32_t self);
+    auto p_disableUnit = reinterpret_cast<DISABLEUNIT>(0x5fbb60);
+    p_disableUnit(unit);
+}
+
+void vanilla1121_unitEnable(uint32_t unit) {
+    if (unit == NULL || (unit & 1) != 0) {
+        return;
+    }
+
+    // All thanks to pepopo978
+    typedef void(__thiscall* ENABLEUNIT)(uint32_t self);
+    auto p_enableUnit = reinterpret_cast<ENABLEUNIT>(0x5fbd60);
+    auto p_postEnableUnit = reinterpret_cast<ENABLEUNIT>(0x5fbe00);
+    p_enableUnit(unit);
+    p_postEnableUnit(unit);
+}
+
+C3Vector vectorFromFloatArray(const float* f) {
+    C3Vector result = {};
+    result.x = f[0];
+    result.y = f[1];
+    result.z = f[2];
+
+    return result;
+}
+
+C3Vector vectorFromFloatArrayByIndex(const uint32_t base, const uint16_t index) {
+    const float* f = reinterpret_cast<const float*>(base + index * 12u);
+    C3Vector result = {};
+    result.x = f[0];
+    result.y = f[1];
+    result.z = f[2];
+
+    return result;
+}
+
+C3Vector vectorSubtract(const C3Vector& a, const C3Vector& b) {
+    C3Vector result = {};
+    result.x = a.x - b.x;
+    result.y = a.y - b.y;
+    result.z = a.z - b.z;
+
+    return result;
+}
+
+bool vanilla1121_gameInForeground() {
+    return GetForegroundWindow() == vanilla1121_gameWindow();
 }

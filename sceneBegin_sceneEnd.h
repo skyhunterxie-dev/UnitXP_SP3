@@ -9,7 +9,7 @@
 
 #include "worldText.h"
 
-typedef HRESULT (WINAPI* LPD3DXCREATEFFONTW)(
+typedef HRESULT(WINAPI* LPD3DXCREATEFFONTW)(
     LPDIRECT3DDEVICE9       pDevice,
     INT                     Height,
     UINT                    Width,
@@ -21,7 +21,7 @@ typedef HRESULT (WINAPI* LPD3DXCREATEFFONTW)(
     DWORD                   Quality,
     DWORD                   PitchAndFamily,
     LPCWSTR                 pFaceName,
-    LPD3DXFONT*             ppFont);
+    LPD3DXFONT* ppFont);
 extern LPD3DXCREATEFFONTW p_D3DCreateFontW;
 extern bool scene_isEnabled;
 extern bool sceneEnd_useXP3combatText;
@@ -29,8 +29,8 @@ extern bool scene_hideEXPtext;
 void sceneEnd_init();
 void sceneEnd_end();
 bool sceneEnd_reloadFont(int fontSize);
-void sceneEnd_addSmallFloatingText(std::string text, int r = 255, int g = 255, int b = 255, int a = 255);
-void sceneEnd_addCritText(std::string text, int r = 255, int g = 255, int b = 255, int a = 255);
+void sceneEnd_addSmallFloatingText(std::string text, int r, int g, int b, int a, worldText::FLOATING_DIRECTION direction);
+void sceneEnd_addCritText(std::string text, int r, int g, int b, int a);
 std::string sceneEnd_debugText();
 
 // The technique of hooking __thiscall function is from: https://tresp4sser.wordpress.com/2012/10/06/how-to-hook-thiscall-functions/

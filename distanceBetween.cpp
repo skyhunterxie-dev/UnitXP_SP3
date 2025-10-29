@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 #include <string>
 #include <sstream>
@@ -10,11 +10,7 @@ using namespace std;
 
 
 float UnitXP_distanceBetween(const C3Vector& pos0, const C3Vector& pos1) {
-    C3Vector v = {};
-    v.x = pos0.x - pos1.x;
-    v.y = pos0.y - pos1.y;
-    v.z = pos0.z - pos1.z;
-    return vectorLength(v);
+    return vectorLength(vectorSubtract(pos0, pos1));
 }
 
 // return -1 for error

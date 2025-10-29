@@ -19,9 +19,9 @@ static ID3DXFont* scene_fontBIG = NULL;
 static ID3DXFont* scene_fontSmall = NULL;
 static ID3DXFont* scene_fontHUGE = NULL;
 static LPDIRECT3DDEVICE9 lastDXdevice = NULL;
-static std::list<xp3::FloatingUpText> floatingTexts{};
-static std::unordered_map<uint64_t, xp3::CritText> critTexts{};
-static std::list<xp3::FloatingUpText> smallFloatingTexts{};
+static std::list<worldText::Floating> floatingTexts{};
+static std::unordered_map<uint64_t, worldText::Crit> critTexts{};
+static std::list<worldText::Floating> smallFloatingTexts{};
 static int scene_fontSize = 36;
 static bool scene_fontsOnLost = false;
 
@@ -295,7 +295,7 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
     p_original_sceneEnd(CGxDevice);
 }
 
-static void sortAddNewFloatingText(xp3::FloatingUpText& newText, std::list<xp3::FloatingUpText>& list) {
+static void sortAddNewFloatingText(worldText::Floating& newText, std::list<worldText::Floating>& list) {
     int maxOverlapHeight = -1;
     for (auto it = list.begin(); it != list.end(); ++it) {
         RECT r = {};
@@ -374,13 +374,13 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
             b = 4;
         }
 
-        xp3::FloatingUpText newText(text, stickToGUID, r, g, b, 255, font, lastDXdevice);
+        worldText::Floating newText(text, stickToGUID, r, g, b, 255, worldText::up, font, lastDXdevice);
         sortAddNewFloatingText(newText, floatingTexts);
         return;
     }
     case 2:
     {
-        xp3::CritText newCrit(text, stickToGUID, r, g, b, 255, scene_font, scene_fontBIG, scene_fontHUGE, lastDXdevice);
+        worldText::Crit newCrit(text, stickToGUID, r, g, b, 255, scene_font, scene_fontBIG, scene_fontHUGE, lastDXdevice);
 
         auto it = critTexts.find(stickToGUID);
         if (it != critTexts.end()) {
@@ -408,12 +408,12 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
     }
 }
 
-void sceneEnd_addSmallFloatingText(std::string text, int r, int g, int b, int a) {
+void sceneEnd_addSmallFloatingText(std::string text, int r, int g, int b, int a, worldText::FLOATING_DIRECTION direction) {
     if (lastDXdevice == NULL || scene_font == NULL || scene_fontBIG == NULL || scene_fontHUGE == NULL || scene_fontSmall == NULL) {
         return;
     }
 
-    xp3::FloatingUpText newText(text, UnitGUID("player"), r, g, b, a, scene_fontSmall, lastDXdevice);
+    worldText::Floating newText(text, UnitGUID("player"), r, g, b, a, direction, scene_fontSmall, lastDXdevice);
     sortAddNewFloatingText(newText, smallFloatingTexts);
 }
 
@@ -425,7 +425,7 @@ void sceneEnd_addCritText(std::string text, int r, int g, int b, int a) {
     uint64_t player = UnitGUID("player");
 
     D3DCOLOR color = D3DCOLOR_ARGB(a, r, g, b);
-    xp3::CritText newCrit(text, player, r, g, b, a, scene_font, scene_fontBIG, scene_fontHUGE, lastDXdevice);
+    worldText::Crit newCrit(text, player, r, g, b, a, scene_font, scene_fontBIG, scene_fontHUGE, lastDXdevice);
 
     auto it = critTexts.find(player);
     if (it != critTexts.end()) {

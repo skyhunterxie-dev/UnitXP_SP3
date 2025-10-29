@@ -317,8 +317,6 @@ int camera_inSight(const void* unitvoid) {
         return 1;
     }
 
-    cameraCacheHousekeeping();
-
     LARGE_INTEGER now = {};
     QueryPerformanceCounter(&now);
 
@@ -337,6 +335,8 @@ int camera_inSight(const void* unitvoid) {
     QueryPerformanceCounter(&now);
     now.QuadPart += cacheDither().QuadPart;
     cameraSightCache[guid] = make_pair(now, result);
+
+    cameraCacheHousekeeping();
 
     return result;
 }
@@ -377,8 +377,6 @@ int UnitXP_inSight(const void* unit0void, const void* unit1void) {
         return 1;
     }
 
-    unitCacheHousekeeping();
-
     LARGE_INTEGER now = {};
     QueryPerformanceCounter(&now);
 
@@ -398,6 +396,8 @@ int UnitXP_inSight(const void* unit0void, const void* unit1void) {
     now.QuadPart += cacheDither().QuadPart;
     unitSightCache[make_pair(guid0, guid1)] = make_pair(now, result);
     unitSightCache[make_pair(guid1, guid0)] = make_pair(now, result);
+
+    unitCacheHousekeeping();
 
     return result;
 }

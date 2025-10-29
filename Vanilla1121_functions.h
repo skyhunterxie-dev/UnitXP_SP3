@@ -212,6 +212,7 @@ float vanilla1121_getCameraCurrentDistance(uint32_t camera);
 float vanilla1121_getCameraDesiredDistance(uint32_t camera);
 float vanilla1121_getCameraNearClip(uint32_t camera);
 float vanilla1121_getCameraFarClip(uint32_t camera);
+// Width divide height
 float vanilla1121_getCameraAspectRatio(uint32_t camera);
 uint32_t vanilla1121_getCameraIntersectFlag();
 C3Vector vanilla1121_getCameraForwardVector(uint32_t camera);
@@ -242,13 +243,17 @@ float vanilla1121_unitCollisionBoxHeight(uint32_t unit);
 float vectorLength(C3Vector& vec);
 C3Vector vectorCrossProduct(const C3Vector& a, const C3Vector& b);
 float vectorDotProduct(const C3Vector& a, const C3Vector& b);
+C3Vector vectorSubtract(const C3Vector& a, const C3Vector& b);
 void vectorNormalize(C3Vector& vec);
+C3Vector vectorFromFloatArray(const float* f);
+C3Vector vectorFromFloatArrayByIndex(const uint32_t base, const uint16_t index);
 // Return 4 * M_PI for error
 float angleBetweenVectors(C3Vector& a, C3Vector& b);
 bool vectorsAreNear(C3Vector& a, C3Vector& b);
 bool vectorAlmostZero(C3Vector& vec);
 HWND vanilla1121_gameWindow();
 RECT vanilla1121_gameClientRect();
+bool vanilla1121_gameInForeground();
 uint32_t vanilla1121_worldFrame();
 C3Vector vanilla1121_worldToScreen(C3Vector& world);
 uint32_t vanilla1121_gameLocale();
@@ -256,3 +261,5 @@ uint32_t vanilla1121_gameLocale();
 std::string vanilla1121_getCVar(const std::string& name);
 // Return "error" for error, or same string as Lua IsInInstance()
 std::string vanilla1121_isInInstance();
+void vanilla1121_unitDisable(uint32_t unit);
+void vanilla1121_unitEnable(uint32_t unit);
