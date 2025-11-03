@@ -15,7 +15,7 @@ namespace worldText {
 
     class Floating {
     public:
-        Floating(std::string text, uint64_t stickToGUID, int r, int g, int b, int a, FLOATING_DIRECTION direction, ID3DXFont* font, LPDIRECT3DDEVICE9 device);
+        Floating(std::string text, uint64_t stickToGUID, int r, int g, int b, int a, FLOATING_DIRECTION direction, ID3DXFont* font, bool serif, LPDIRECT3DDEVICE9 device);
 
         // Return 1 = draw; 0 = invisible; -1 = end
         // As device might be lost during animation, we would update it
@@ -24,6 +24,7 @@ namespace worldText {
         void fastForward(int ffDistance);
 
         RECT m_rect;
+        bool m_serif;
     private:
         std::string m_text;
         uint64_t m_stickToGUID;
@@ -32,8 +33,8 @@ namespace worldText {
         int m_g;
         int m_b;
         int m_a;
-        ID3DXFont* m_font;
         LPDIRECT3DDEVICE9 m_device;
+        ID3DXFont* m_font;
         LARGE_INTEGER m_startTime;
         int m_width;
         int m_height;
@@ -58,7 +59,7 @@ namespace worldText {
 
     class Crit {
     public:
-        Crit(std::string text, uint64_t stickToGUID, int r, int g, int b, int a, ID3DXFont* fontNormal, ID3DXFont* fontBig, ID3DXFont* fontHuge, LPDIRECT3DDEVICE9 device);
+        Crit(std::string text, uint64_t stickToGUID, int r, int g, int b, int a, ID3DXFont* fontNormal, ID3DXFont* fontBig, ID3DXFont* fontHuge, bool serif, LPDIRECT3DDEVICE9 device);
 
         // Return 1 = draw; 0 = invisible; -1 = end
         // As device might be lost during animation, we would update it
@@ -67,6 +68,7 @@ namespace worldText {
         void draw();
 
         RECT m_rect;
+        bool m_serif;
     private:
         std::string m_text;
         uint64_t m_stickToGUID;
@@ -75,11 +77,10 @@ namespace worldText {
         int m_g;
         int m_b;
         int m_a;
-        
+
         // Additional alpha blending
         double m_alpha;
         double m_alpha_forHugeFont;
-
         ID3DXFont* m_fontNormal;
         ID3DXFont* m_fontBig;
         ID3DXFont* m_fontHuge;

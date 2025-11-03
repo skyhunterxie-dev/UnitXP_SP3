@@ -1,80 +1,74 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 #include <string>
-#include <vector>
-#include <stdexcept>
+
+#include <Windows.h>
 
 #include "utf8_to_utf16.h"
 
-// From https://stackoverflow.com/a/7154226
+// By ChatGPT
 std::wstring utf8_to_utf16(const std::string& utf8)
 {
-    std::vector<unsigned long> unicode;
-    size_t i = 0;
-    while (i < utf8.size())
+    if (utf8.empty())
+        return std::wstring();
+
+    // Calculate the size of the destination buffer
+    int size_needed = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+        utf8.data(), static_cast<int>(utf8.size()),
+        nullptr, 0);
+    if (size_needed == 0)
     {
-        unsigned long uni;
-        size_t todo;
-        bool error = false;
-        unsigned char ch = utf8[i++];
-        if (ch <= 0x7F)
-        {
-            uni = ch;
-            todo = 0;
-        }
-        else if (ch <= 0xBF)
-        {
-            throw std::logic_error("not a UTF-8 string");
-        }
-        else if (ch <= 0xDF)
-        {
-            uni = ch & 0x1F;
-            todo = 1;
-        }
-        else if (ch <= 0xEF)
-        {
-            uni = ch & 0x0F;
-            todo = 2;
-        }
-        else if (ch <= 0xF7)
-        {
-            uni = ch & 0x07;
-            todo = 3;
-        }
-        else
-        {
-            throw std::logic_error("not a UTF-8 string");
-        }
-        for (size_t j = 0; j < todo; ++j)
-        {
-            if (i == utf8.size())
-                throw std::logic_error("not a UTF-8 string");
-            unsigned char ch = utf8[i++];
-            if (ch < 0x80 || ch > 0xBF)
-                throw std::logic_error("not a UTF-8 string");
-            uni <<= 6;
-            uni += ch & 0x3F;
-        }
-        if (uni >= 0xD800 && uni <= 0xDFFF)
-            throw std::logic_error("not a UTF-8 string");
-        if (uni > 0x10FFFF)
-            throw std::logic_error("not a UTF-8 string");
-        unicode.push_back(uni);
+        MessageBoxW(NULL, L"MultiByteToWideChar failed: invalid UTF-8 or system error.", L"UnitXP Service Pack 3", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+        return std::wstring();
     }
-    std::wstring utf16;
-    for (size_t i = 0; i < unicode.size(); ++i)
+
+    std::wstring utf16(size_needed, 0);
+
+    // Perform the actual conversion
+    int result = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+        utf8.data(), static_cast<int>(utf8.size()),
+        &utf16[0], size_needed);
+    if (result == 0)
     {
-        unsigned long uni = unicode[i];
-        if (uni <= 0xFFFF)
-        {
-            utf16 += (wchar_t)uni;
-        }
-        else
-        {
-            uni -= 0x10000;
-            utf16 += (wchar_t)((uni >> 10) + 0xD800);
-            utf16 += (wchar_t)((uni & 0x3FF) + 0xDC00);
-        }
+        MessageBoxW(NULL, L"MultiByteToWideChar failed during conversion.", L"UnitXP Service Pack 3", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+        return std::wstring();
     }
+
     return utf16;
+}
+
+// By ChatGPT
+bool isCambriaSupported(const std::wstring& utf16) {
+    for (wchar_t ch : utf16) {
+        // Latin
+        if ((ch >= 0x0020 && ch <= 0x007E) ||           // Basic Latin
+            (ch >= 0x00A0 && ch <= 0x00FF) ||           // Latin-1 Supplement
+            (ch >= 0x0100 && ch <= 0x017F) ||           // Latin Extended-A
+            (ch >= 0x0180 && ch <= 0x024F)) {           // Latin Extended-B
+            continue;
+        }
+
+        // Cyrillic
+        if ((ch >= 0x0400 && ch <= 0x04FF) ||           // Cyrillic
+            (ch >= 0x0500 && ch <= 0x052F)) {           // Cyrillic Supplement
+            continue;
+        }
+
+        // Greek
+        if ((ch >= 0x0370 && ch <= 0x03FF)) {           // Greek & Coptic
+            continue;
+        }
+
+        // Numbers & Punctuation
+        if ((ch >= 0x2000 && ch <= 0x206F) ||           // General punctuation
+            (ch >= 0x20A0 && ch <= 0x20CF) ||           // Currency symbols
+            (ch >= 0x2150 && ch <= 0x218F)) {           // Number fractions
+            continue;
+        }
+
+        // If character didn't match any supported block, cannot render
+        return false;
+    }
+
+    return true;
 }

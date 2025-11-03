@@ -15,10 +15,11 @@ const int worldText::animationFPS = 180;
 uint64_t worldText::Floating::m_instanceCount = 0;
 double worldText::nameplateHeight = 55.0f;
 
-worldText::Floating::Floating(std::string text, uint64_t stickToGUID, int r, int g, int b, int a, FLOATING_DIRECTION direction, ID3DXFont* font, LPDIRECT3DDEVICE9 device) {
+worldText::Floating::Floating(std::string text, uint64_t stickToGUID, int r, int g, int b, int a, FLOATING_DIRECTION direction, ID3DXFont* font, bool serif, LPDIRECT3DDEVICE9 device) {
     m_text = text;
     m_stickToGUID = stickToGUID;
     m_playerGUID = UnitGUID("player");
+    m_serif = serif;
     m_r = r;
     m_g = g;
     m_b = b;
@@ -172,8 +173,9 @@ void worldText::Floating::fastForward(int ffDistance) {
     m_startTime.QuadPart -= static_cast<LONGLONG>((static_cast<double>(ffDistance) / static_cast<double>(m_floatingDistance)) * m_totalTime * animationFPS) * m_timingPrecision.QuadPart;
 }
 
-worldText::Crit::Crit(std::string text, uint64_t stickToGUID, int r, int g, int b, int a, ID3DXFont* fontNormal, ID3DXFont* fontBig, ID3DXFont* fontHuge, LPDIRECT3DDEVICE9 device) {
+worldText::Crit::Crit(std::string text, uint64_t stickToGUID, int r, int g, int b, int a, ID3DXFont* fontNormal, ID3DXFont* fontBig, ID3DXFont* fontHuge, bool serif, LPDIRECT3DDEVICE9 device) {
     m_text = text;
+    m_serif = serif;
     m_stickToGUID = stickToGUID;
     m_playerGUID = UnitGUID("player");
     m_totalTime = 2.2;
