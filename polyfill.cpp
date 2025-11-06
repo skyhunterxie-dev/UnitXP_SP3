@@ -10,7 +10,6 @@
 #include "Vanilla1121_functions.h"
 
 bool ERMS = false;
-bool AVX = false;
 bool SSE2 = false;
 void polyfill_checkCPU() {
     // By Chat GPT
@@ -18,27 +17,17 @@ void polyfill_checkCPU() {
     int cpuInfo[4] = { 0 };
 
     __cpuid(cpuInfo, 0);
-    if (cpuInfo[0] < 7) {
+    if (cpuInfo[0] >= 7) {
+        __cpuidex(cpuInfo, 0x7, 0);
+        ERMS = (cpuInfo[1] & (1 << 9)) != 0;
+    }
+    else {
         ERMS = false;
     }
-
-    __cpuidex(cpuInfo, 0x7, 0);
-    ERMS = (cpuInfo[1] & (1 << 9)) != 0;
 
     __cpuid(cpuInfo, 1);
 
     SSE2 = (cpuInfo[3] & (1 << 26)) != 0;
-
-    bool osUsesXSAVE_XRSTORE = (cpuInfo[2] & (1 << 27)) != 0;
-    bool cpuAVXSupport = (cpuInfo[2] & (1 << 28)) != 0;
-
-    if (osUsesXSAVE_XRSTORE && cpuAVXSupport) {
-        unsigned long long xcrFeatureMask = _xgetbv(_XCR_XFEATURE_ENABLED_MASK);
-        AVX = (xcrFeatureMask & 0x6) == 0x6;
-    }
-    else {
-        AVX = false;
-    }
 }
 
 OPERATOR_MULTIPLY_1 p_operator_multiply_1 = reinterpret_cast<OPERATOR_MULTIPLY_1>(0x7bca80);

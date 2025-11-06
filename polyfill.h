@@ -24,7 +24,6 @@ extern uint64_t polyfill_debugCounter;
 std::string getPolyfillDebug();
 
 extern bool ERMS;
-extern bool AVX;
 extern bool SSE2;
 void polyfill_checkCPU();
 
