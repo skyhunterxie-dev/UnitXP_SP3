@@ -4,35 +4,40 @@
 
 #pragma comment(lib, "libMinHook.x86.lib")
 
-#include <Windows.h>
-#include "MinHook.h"
-
-#include <string>
 #include <sstream>
+
+#include <Windows.h>
+#include <d3d9.h>
+#include <d3dx9.h>
+#include "MinHook.h"
 
 #include "sceneBegin_sceneEnd.h"
 #include "utf8_to_utf16.h"
 #include "Vanilla1121_functions.h"
 
-static ID3DXFont* scene_font = NULL;
-static ID3DXFont* scene_fontBIG = NULL;
-static ID3DXFont* scene_fontSmall = NULL;
-static ID3DXFont* scene_fontHUGE = NULL;
-static ID3DXFont* scene_serif = NULL;
-static ID3DXFont* scene_serifBIG = NULL;
-static ID3DXFont* scene_serifSmall = NULL;
-static ID3DXFont* scene_serifHUGE = NULL;
-static LPDIRECT3DDEVICE9 lastDXdevice = NULL;
+static ID3DXFont* scene_fallback = NULL;
+static ID3DXFont* scene_fallbackBIG = NULL;
+static ID3DXFont* scene_fallbackSmall = NULL;
+static ID3DXFont* scene_fallbackHUGE = NULL;
+static ID3DXFont* scene_selected = NULL;
+static ID3DXFont* scene_selectedBIG = NULL;
+static ID3DXFont* scene_selectedSmall = NULL;
+static ID3DXFont* scene_selectedHUGE = NULL;
 static std::list<worldText::Floating> floatingTexts{};
 static std::unordered_map<uint64_t, worldText::Crit> critTexts{};
 static std::list<worldText::Floating> smallFloatingTexts{};
-static int scene_fontSize = 36;
 static bool scene_fontsOnLost = false;
 
+LPDIRECT3DDEVICE9 scene_lastDXdevice = NULL;
+bool scene_needReloadFont = false;
 bool scene_isEnabled = false;
 bool scene_hideEXPtext = false;
+int scene_fontSize = 36;
+// ChatGPT: Microsoft YaHei is an Unicode font and it exists even on English Windows Vista
+const static std::string scene_fallbackFontName{ u8"Microsoft YaHei" };
+std::string scene_userSelectedFontName{ scene_fallbackFontName };
 
-LPD3DXCREATEFFONTW p_D3DCreateFontW = NULL;
+LPD3DXCREATEFFONTW p_D3DXCreateFontW = NULL;
 void sceneEnd_init() {
     HMODULE hDLL = NULL;
     for (int ver = 43; ver >= 24; --ver) {
@@ -48,9 +53,9 @@ void sceneEnd_init() {
         return;
     }
 
-    p_D3DCreateFontW = reinterpret_cast<LPD3DXCREATEFFONTW>(GetProcAddress(hDLL, "D3DXCreateFontW"));
+    p_D3DXCreateFontW = reinterpret_cast<LPD3DXCREATEFFONTW>(GetProcAddress(hDLL, "D3DXCreateFontW"));
 
-    if (p_D3DCreateFontW == NULL) {
+    if (p_D3DXCreateFontW == NULL) {
         FreeLibrary(hDLL);
         return;
     }
@@ -63,6 +68,7 @@ static void sceneEnd_fontPreload(ID3DXFont* font) {
     font->PreloadCharacters(0x20, 0x7e);
 
     // Chinese
+    // ChatGPT says: Calling ID3DXFont::PreloadText on a string that contains characters the font cannot render is safe in the sense that the API itself does not document (and there are no common reports of) crashes or undefined memory corruption when characters are unsupported.
     font->PreloadTextW(utf8_to_utf16(u8"经验值：").c_str(), 4);
     font->PreloadTextW(utf8_to_utf16(u8"脱离进入战斗").c_str(), 6);
     font->PreloadTextW(utf8_to_utf16(u8"非荣誉击杀").c_str(), 5);
@@ -75,93 +81,93 @@ static void sceneEnd_fontPreload(ID3DXFont* font) {
 }
 
 static void sceneEnd_fontsOnLostDevice() {
-    if (scene_font != NULL) {
-        scene_font->OnLostDevice();
+    if (scene_fallback != NULL) {
+        scene_fallback->OnLostDevice();
     }
-    if (scene_fontBIG != NULL) {
-        scene_fontBIG->OnLostDevice();
+    if (scene_fallbackBIG != NULL) {
+        scene_fallbackBIG->OnLostDevice();
     }
-    if (scene_fontSmall != NULL) {
-        scene_fontSmall->OnLostDevice();
+    if (scene_fallbackSmall != NULL) {
+        scene_fallbackSmall->OnLostDevice();
     }
-    if (scene_fontHUGE != NULL) {
-        scene_fontHUGE->OnLostDevice();
+    if (scene_fallbackHUGE != NULL) {
+        scene_fallbackHUGE->OnLostDevice();
     }
-    if (scene_serif != NULL) {
-        scene_serif->OnLostDevice();
+    if (scene_selected != NULL) {
+        scene_selected->OnLostDevice();
     }
-    if (scene_serifBIG != NULL) {
-        scene_serifBIG->OnLostDevice();
+    if (scene_selectedBIG != NULL) {
+        scene_selectedBIG->OnLostDevice();
     }
-    if (scene_serifSmall != NULL) {
-        scene_serifSmall->OnLostDevice();
+    if (scene_selectedSmall != NULL) {
+        scene_selectedSmall->OnLostDevice();
     }
-    if (scene_serifHUGE != NULL) {
-        scene_serifHUGE->OnLostDevice();
+    if (scene_selectedHUGE != NULL) {
+        scene_selectedHUGE->OnLostDevice();
     }
     scene_fontsOnLost = true;
 }
 
 static void sceneEnd_fontsOnResetDevice() {
-    if (scene_font != NULL) {
-        scene_font->OnResetDevice();
+    if (scene_fallback != NULL) {
+        scene_fallback->OnResetDevice();
     }
-    if (scene_fontBIG != NULL) {
-        scene_fontBIG->OnResetDevice();
+    if (scene_fallbackBIG != NULL) {
+        scene_fallbackBIG->OnResetDevice();
     }
-    if (scene_fontSmall != NULL) {
-        scene_fontSmall->OnResetDevice();
+    if (scene_fallbackSmall != NULL) {
+        scene_fallbackSmall->OnResetDevice();
     }
-    if (scene_fontHUGE != NULL) {
-        scene_fontHUGE->OnResetDevice();
+    if (scene_fallbackHUGE != NULL) {
+        scene_fallbackHUGE->OnResetDevice();
     }
-    if (scene_serif != NULL) {
-        scene_serif->OnResetDevice();
+    if (scene_selected != NULL) {
+        scene_selected->OnResetDevice();
     }
-    if (scene_serifBIG != NULL) {
-        scene_serifBIG->OnResetDevice();
+    if (scene_selectedBIG != NULL) {
+        scene_selectedBIG->OnResetDevice();
     }
-    if (scene_serifSmall != NULL) {
-        scene_serifSmall->OnResetDevice();
+    if (scene_selectedSmall != NULL) {
+        scene_selectedSmall->OnResetDevice();
     }
-    if (scene_serifHUGE != NULL) {
-        scene_serifHUGE->OnResetDevice();
+    if (scene_selectedHUGE != NULL) {
+        scene_selectedHUGE->OnResetDevice();
     }
     scene_fontsOnLost = false;
 }
 
 static void sceneEnd_unloadFonts() {
-    if (scene_font != NULL) {
-        scene_font->Release();
-        scene_font = NULL;
+    if (scene_fallback != NULL) {
+        scene_fallback->Release();
+        scene_fallback = NULL;
     }
-    if (scene_fontBIG != NULL) {
-        scene_fontBIG->Release();
-        scene_fontBIG = NULL;
+    if (scene_fallbackBIG != NULL) {
+        scene_fallbackBIG->Release();
+        scene_fallbackBIG = NULL;
     }
-    if (scene_fontSmall != NULL) {
-        scene_fontSmall->Release();
-        scene_fontSmall = NULL;
+    if (scene_fallbackSmall != NULL) {
+        scene_fallbackSmall->Release();
+        scene_fallbackSmall = NULL;
     }
-    if (scene_fontHUGE != NULL) {
-        scene_fontHUGE->Release();
-        scene_fontHUGE = NULL;
+    if (scene_fallbackHUGE != NULL) {
+        scene_fallbackHUGE->Release();
+        scene_fallbackHUGE = NULL;
     }
-    if (scene_serif != NULL) {
-        scene_serif->Release();
-        scene_serif = NULL;
+    if (scene_selected != NULL) {
+        scene_selected->Release();
+        scene_selected = NULL;
     }
-    if (scene_serifBIG != NULL) {
-        scene_serifBIG->Release();
-        scene_serifBIG = NULL;
+    if (scene_selectedBIG != NULL) {
+        scene_selectedBIG->Release();
+        scene_selectedBIG = NULL;
     }
-    if (scene_serifSmall != NULL) {
-        scene_serifSmall->Release();
-        scene_serifSmall = NULL;
+    if (scene_selectedSmall != NULL) {
+        scene_selectedSmall->Release();
+        scene_selectedSmall = NULL;
     }
-    if (scene_serifHUGE != NULL) {
-        scene_serifHUGE->Release();
-        scene_serifHUGE = NULL;
+    if (scene_selectedHUGE != NULL) {
+        scene_selectedHUGE->Release();
+        scene_selectedHUGE = NULL;
     }
 }
 
@@ -170,7 +176,7 @@ void sceneEnd_end() {
     scene_isEnabled = false;
 }
 
-bool sceneEnd_reloadFont(int fontSize) {
+bool sceneEnd_reloadFont() {
     if (scene_isEnabled == false) {
         return false;
     }
@@ -178,79 +184,75 @@ bool sceneEnd_reloadFont(int fontSize) {
         sceneEnd_unloadFonts();
     }
 
-    scene_fontSize = fontSize;
-
     {
-        // ChatGPT: Microsoft YaHei is an Unicode font and it exists even on English Windows Vista
-        const std::string fontName{ u8"Microsoft YaHei" };
-
-        if (scene_font == NULL) {
-            if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(fontName).c_str(), &scene_font))) {
-                scene_font = NULL;
+        if (scene_fallback == NULL) {
+            if (false == SUCCEEDED(p_D3DXCreateFontW(scene_lastDXdevice, scene_fontSize, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_fallbackFontName).c_str(), &scene_fallback))) {
+                scene_fallback = NULL;
                 return false;
             }
-            sceneEnd_fontPreload(scene_font);
+            sceneEnd_fontPreload(scene_fallback);
         }
 
-        if (scene_fontBIG == NULL) {
-            if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize + 15, 0, FW_BOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(fontName).c_str(), &scene_fontBIG))) {
-                scene_fontBIG = NULL;
+        if (scene_fallbackBIG == NULL) {
+            if (false == SUCCEEDED(p_D3DXCreateFontW(scene_lastDXdevice, scene_fontSize + 15, 0, FW_BOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_fallbackFontName).c_str(), &scene_fallbackBIG))) {
+                scene_fallbackBIG = NULL;
                 return false;
             }
-            sceneEnd_fontPreload(scene_fontBIG);
+            sceneEnd_fontPreload(scene_fallbackBIG);
         }
 
-        if (scene_fontSmall == NULL) {
-            if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize - 4, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(fontName).c_str(), &scene_fontSmall))) {
-                scene_fontSmall = NULL;
+        if (scene_fallbackSmall == NULL) {
+            if (false == SUCCEEDED(p_D3DXCreateFontW(scene_lastDXdevice, scene_fontSize - 4, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_fallbackFontName).c_str(), &scene_fallbackSmall))) {
+                scene_fallbackSmall = NULL;
                 return false;
             }
-            sceneEnd_fontPreload(scene_fontSmall);
+            sceneEnd_fontPreload(scene_fallbackSmall);
         }
 
-        if (scene_fontHUGE == NULL) {
-            if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize + 15, 0, FW_HEAVY, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(fontName).c_str(), &scene_fontHUGE))) {
-                scene_fontHUGE = NULL;
+        if (scene_fallbackHUGE == NULL) {
+            if (false == SUCCEEDED(p_D3DXCreateFontW(scene_lastDXdevice, scene_fontSize + 15, 0, FW_HEAVY, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_fallbackFontName).c_str(), &scene_fallbackHUGE))) {
+                scene_fallbackHUGE = NULL;
                 return false;
             }
-            sceneEnd_fontPreload(scene_fontHUGE);
+            sceneEnd_fontPreload(scene_fallbackHUGE);
         }
     }
 
     {
-        // ChatGPT: Cambria ships with all Windows versions since Vista
-        const std::string fontName{ u8"Cambria" };
-
-        if (scene_serif == NULL) {
-            if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(fontName).c_str(), &scene_serif))) {
-                scene_serif = NULL;
-                return false;
+        if (scene_selected == NULL) {
+            if (false == SUCCEEDED(p_D3DXCreateFontW(scene_lastDXdevice, scene_fontSize, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_userSelectedFontName).c_str(), &scene_selected))) {
+                scene_userSelectedFontName = scene_fallbackFontName;
+                if (false == SUCCEEDED(p_D3DXCreateFontW(scene_lastDXdevice, scene_fontSize, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_userSelectedFontName).c_str(), &scene_selected))) {
+                    scene_selected = NULL;
+                    return false;
+                }
             }
-            sceneEnd_fontPreload(scene_serif);
+            sceneEnd_fontPreload(scene_selected);
+            utf8_reloadRenderRanges(reinterpret_cast<void*>(scene_selected));
         }
 
-        if (scene_serifBIG == NULL) {
-            if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize + 15, 0, FW_BOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(fontName).c_str(), &scene_serifBIG))) {
-                scene_serifBIG = NULL;
+        if (scene_selectedBIG == NULL) {
+            if (false == SUCCEEDED(p_D3DXCreateFontW(scene_lastDXdevice, scene_fontSize + 15, 0, FW_BOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_userSelectedFontName).c_str(), &scene_selectedBIG))) {
+                scene_selectedBIG = NULL;
                 return false;
             }
-            sceneEnd_fontPreload(scene_serifBIG);
+            sceneEnd_fontPreload(scene_selectedBIG);
         }
 
-        if (scene_serifSmall == NULL) {
-            if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize - 4, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(fontName).c_str(), &scene_serifSmall))) {
-                scene_serifSmall = NULL;
+        if (scene_selectedSmall == NULL) {
+            if (false == SUCCEEDED(p_D3DXCreateFontW(scene_lastDXdevice, scene_fontSize - 4, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_userSelectedFontName).c_str(), &scene_selectedSmall))) {
+                scene_selectedSmall = NULL;
                 return false;
             }
-            sceneEnd_fontPreload(scene_serifSmall);
+            sceneEnd_fontPreload(scene_selectedSmall);
         }
 
-        if (scene_serifHUGE == NULL) {
-            if (false == SUCCEEDED(p_D3DCreateFontW(lastDXdevice, fontSize + 15, 0, FW_HEAVY, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(fontName).c_str(), &scene_serifHUGE))) {
-                scene_serifHUGE = NULL;
+        if (scene_selectedHUGE == NULL) {
+            if (false == SUCCEEDED(p_D3DXCreateFontW(scene_lastDXdevice, scene_fontSize + 15, 0, FW_HEAVY, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_userSelectedFontName).c_str(), &scene_selectedHUGE))) {
+                scene_selectedHUGE = NULL;
                 return false;
             }
-            sceneEnd_fontPreload(scene_serifHUGE);
+            sceneEnd_fontPreload(scene_selectedHUGE);
         }
     }
 
@@ -283,36 +285,30 @@ ISCENEEND p_original_sceneEnd = NULL;
 void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
     if (*reinterpret_cast<uint32_t*>(CGxDevice + 0x3a38) != NULL
         && scene_isEnabled == true
-        && scene_fontsOnLost == false) {
+        && scene_fontsOnLost == false && scene_needReloadFont == false) {
         LPDIRECT3DDEVICE9 dxDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(*reinterpret_cast<uint32_t*>(CGxDevice + 0x38a8));
-        if (dxDevice != lastDXdevice) {
-            lastDXdevice = dxDevice;
-
-            sceneEnd_unloadFonts();
+        if (dxDevice != scene_lastDXdevice) {
+            scene_lastDXdevice = dxDevice;
+            scene_needReloadFont = true;
+            p_original_sceneEnd(CGxDevice);
+            return;
         }
 
-        if (scene_font == NULL || scene_fontBIG == NULL || scene_fontSmall == NULL || scene_fontHUGE == NULL
-            || scene_serif == NULL || scene_serifBIG == NULL || scene_serifSmall == NULL || scene_serifHUGE == NULL) {
-            if (lastDXdevice->TestCooperativeLevel() != D3D_OK) {
-                p_original_sceneEnd(CGxDevice);
-                return;
-            }
-            if (false == sceneEnd_reloadFont(scene_fontSize)) {
-                scene_isEnabled = false;
-                lastDXdevice = NULL;
-                p_original_sceneEnd(CGxDevice);
-                return;
-            }
+        if (scene_fallback == NULL || scene_fallbackBIG == NULL || scene_fallbackSmall == NULL || scene_fallbackHUGE == NULL
+            || scene_selected == NULL || scene_selectedBIG == NULL || scene_selectedSmall == NULL || scene_selectedHUGE == NULL) {
+            scene_needReloadFont = true;
+            p_original_sceneEnd(CGxDevice);
+            return;
         }
 
         // First iteration does not draw but only update RECT for overlapping test
         for (auto it = critTexts.begin(); it != critTexts.end();) {
             int update = -1;
             if (it->second.m_serif) {
-                update = it->second.update(scene_serif, scene_serifBIG, scene_serifHUGE, lastDXdevice);
+                update = it->second.update(scene_selected, scene_selectedBIG, scene_selectedHUGE, scene_lastDXdevice);
             }
             else {
-                update = it->second.update(scene_font, scene_fontBIG, scene_fontHUGE, lastDXdevice);
+                update = it->second.update(scene_fallback, scene_fallbackBIG, scene_fallbackHUGE, scene_lastDXdevice);
             }
 
             if (update == -1) {
@@ -325,10 +321,10 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
         for (auto it = smallFloatingTexts.begin(); it != smallFloatingTexts.end();) {
             int update = -1;
             if (it->m_serif) {
-                update = it->update(scene_serifSmall, lastDXdevice);
+                update = it->update(scene_selectedSmall, scene_lastDXdevice);
             }
             else {
-                update = it->update(scene_fontSmall, lastDXdevice);
+                update = it->update(scene_fallbackSmall, scene_lastDXdevice);
             }
 
             if (update == -1) {
@@ -356,10 +352,10 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
         for (auto it = floatingTexts.begin(); it != floatingTexts.end();) {
             int update = -1;
             if (it->m_serif) {
-                update = it->update(scene_serif, lastDXdevice);
+                update = it->update(scene_selected, scene_lastDXdevice);
             }
             else {
-                update = it->update(scene_font, lastDXdevice);
+                update = it->update(scene_fallback, scene_lastDXdevice);
             }
 
             if (update == -1) {
@@ -387,10 +383,10 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
         for (auto it = critTexts.begin(); it != critTexts.end();) {
             int update = -1;
             if (it->second.m_serif) {
-                update = it->second.update(scene_serif, scene_serifBIG, scene_serifHUGE, lastDXdevice);
+                update = it->second.update(scene_selected, scene_selectedBIG, scene_selectedHUGE, scene_lastDXdevice);
             }
             else {
-                update = it->second.update(scene_font, scene_fontBIG, scene_fontHUGE, lastDXdevice);
+                update = it->second.update(scene_fallback, scene_fallbackBIG, scene_fallbackHUGE, scene_lastDXdevice);
             }
 
             if (update == -1) {
@@ -460,8 +456,8 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
         return;
     }
 
-    if (lastDXdevice == NULL || scene_font == NULL || scene_fontBIG == NULL || scene_fontHUGE == NULL || scene_fontSmall == NULL
-        || scene_serif == NULL || scene_serifBIG == NULL || scene_serifHUGE == NULL || scene_serifSmall == NULL) {
+    if (scene_lastDXdevice == NULL || scene_fallback == NULL || scene_fallbackBIG == NULL || scene_fallbackHUGE == NULL || scene_fallbackSmall == NULL
+        || scene_selected == NULL || scene_selectedBIG == NULL || scene_selectedHUGE == NULL || scene_selectedSmall == NULL) {
         p_original_createWorldText(self, type, text, color, unknown);
         return;
     }
@@ -471,14 +467,14 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
         stickToGUID = UnitGUID("player");
     }
 
-    ID3DXFont* font = scene_font;
-    ID3DXFont* fontBIG = scene_fontBIG;
-    ID3DXFont* fontHUGE = scene_fontHUGE;
+    ID3DXFont* font = scene_fallback;
+    ID3DXFont* fontBIG = scene_fallbackBIG;
+    ID3DXFont* fontHUGE = scene_fallbackHUGE;
     bool serif = false;
-    if (isCambriaSupported(utf8_to_utf16(text))) {
-        font = scene_serif;
-        fontBIG = scene_serifBIG;
-        fontHUGE = scene_serifHUGE;
+    if (utf8_canBeRendered(utf8_to_utf16(text))) {
+        font = scene_selected;
+        fontBIG = scene_selectedBIG;
+        fontHUGE = scene_selectedHUGE;
         serif = true;
     }
 
@@ -516,13 +512,13 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
             b = 4;
         }
 
-        worldText::Floating newText(text, stickToGUID, r, g, b, 255, worldText::up, font, serif, lastDXdevice);
+        worldText::Floating newText(text, stickToGUID, r, g, b, 255, worldText::up, font, serif, scene_lastDXdevice);
         sortAddNewFloatingText(newText, floatingTexts, smallFloatingTexts);
         return;
     }
     case 2:
     {
-        worldText::Crit newCrit(text, stickToGUID, r, g, b, 255, font, fontBIG, fontHUGE, serif, lastDXdevice);
+        worldText::Crit newCrit(text, stickToGUID, r, g, b, 255, font, fontBIG, fontHUGE, serif, scene_lastDXdevice);
 
         auto it = critTexts.find(stickToGUID);
         if (it != critTexts.end()) {
@@ -551,43 +547,43 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
 }
 
 void sceneEnd_addSmallFloatingText(std::string text, int r, int g, int b, int a, worldText::FLOATING_DIRECTION direction) {
-    if (lastDXdevice == NULL || scene_font == NULL || scene_fontBIG == NULL || scene_fontHUGE == NULL || scene_fontSmall == NULL
-        || scene_serif == NULL || scene_serifBIG == NULL || scene_serifHUGE == NULL || scene_serifSmall == NULL) {
+    if (scene_lastDXdevice == NULL || scene_fallback == NULL || scene_fallbackBIG == NULL || scene_fallbackHUGE == NULL || scene_fallbackSmall == NULL
+        || scene_selected == NULL || scene_selectedBIG == NULL || scene_selectedHUGE == NULL || scene_selectedSmall == NULL) {
         return;
     }
 
-    ID3DXFont* font = scene_fontSmall;
+    ID3DXFont* font = scene_fallbackSmall;
     bool serif = false;
-    if (isCambriaSupported(utf8_to_utf16(text))) {
-        font = scene_serifSmall;
+    if (utf8_canBeRendered(utf8_to_utf16(text))) {
+        font = scene_selectedSmall;
         serif = true;
     }
 
-    worldText::Floating newText(text, UnitGUID("player"), r, g, b, a, direction, font, serif, lastDXdevice);
+    worldText::Floating newText(text, UnitGUID("player"), r, g, b, a, direction, font, serif, scene_lastDXdevice);
     sortAddNewFloatingText(newText, smallFloatingTexts, floatingTexts);
 }
 
 void sceneEnd_addCritText(std::string text, int r, int g, int b, int a) {
-    if (lastDXdevice == NULL || scene_font == NULL || scene_fontBIG == NULL || scene_fontHUGE == NULL || scene_fontSmall == NULL
-        || scene_serif == NULL || scene_serifBIG == NULL || scene_serifHUGE == NULL || scene_serifSmall == NULL) {
+    if (scene_lastDXdevice == NULL || scene_fallback == NULL || scene_fallbackBIG == NULL || scene_fallbackHUGE == NULL || scene_fallbackSmall == NULL
+        || scene_selected == NULL || scene_selectedBIG == NULL || scene_selectedHUGE == NULL || scene_selectedSmall == NULL) {
         return;
     }
 
-    ID3DXFont* font = scene_font;
-    ID3DXFont* fontBIG = scene_fontBIG;
-    ID3DXFont* fontHUGE = scene_fontHUGE;
+    ID3DXFont* font = scene_fallback;
+    ID3DXFont* fontBIG = scene_fallbackBIG;
+    ID3DXFont* fontHUGE = scene_fallbackHUGE;
     bool serif = false;
-    if (isCambriaSupported(utf8_to_utf16(text))) {
-        font = scene_serif;
-        fontBIG = scene_serifBIG;
-        fontHUGE = scene_serifHUGE;
+    if (utf8_canBeRendered(utf8_to_utf16(text))) {
+        font = scene_selected;
+        fontBIG = scene_selectedBIG;
+        fontHUGE = scene_selectedHUGE;
         serif = true;
     }
 
     uint64_t player = UnitGUID("player");
 
     D3DCOLOR color = D3DCOLOR_ARGB(a, r, g, b);
-    worldText::Crit newCrit(text, player, r, g, b, a, font, fontBIG, fontHUGE, serif, lastDXdevice);
+    worldText::Crit newCrit(text, player, r, g, b, a, font, fontBIG, fontHUGE, serif, scene_lastDXdevice);
 
     auto it = critTexts.find(player);
     if (it != critTexts.end()) {

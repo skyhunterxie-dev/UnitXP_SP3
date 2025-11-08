@@ -2,10 +2,9 @@
 
 #include <unordered_map>
 #include <list>
+#include <string>
 
-#include <Windows.h>
 #include <d3d9.h>
-#include <d3dx9.h>
 
 #include "worldText.h"
 
@@ -22,13 +21,18 @@ typedef HRESULT(WINAPI* LPD3DXCREATEFFONTW)(
     DWORD                   PitchAndFamily,
     LPCWSTR                 pFaceName,
     LPD3DXFONT* ppFont);
-extern LPD3DXCREATEFFONTW p_D3DCreateFontW;
+extern LPD3DXCREATEFFONTW p_D3DXCreateFontW;
 extern bool scene_isEnabled;
 extern bool sceneEnd_useXP3combatText;
 extern bool scene_hideEXPtext;
+extern int scene_fontSize;
+extern LPDIRECT3DDEVICE9 scene_lastDXdevice;
+extern std::string scene_userSelectedFontName;
+// It seems d3d9 would crash if call reloadFont() between BeginScene() and EndScene(), so here is a bool switch to delay reloadFont() till Present() is done.
+extern bool scene_needReloadFont;
 void sceneEnd_init();
 void sceneEnd_end();
-bool sceneEnd_reloadFont(int fontSize);
+bool sceneEnd_reloadFont();
 void sceneEnd_addSmallFloatingText(std::string text, int r, int g, int b, int a, worldText::FLOATING_DIRECTION direction);
 void sceneEnd_addCritText(std::string text, int r, int g, int b, int a);
 std::string sceneEnd_debugText();

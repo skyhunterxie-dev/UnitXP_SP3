@@ -1,10 +1,22 @@
 ﻿#include "pch.h"
 
+#include <cstdlib>
 #include <string>
 
 #include <Windows.h>
+#include <d3d9.h>
+#include <d3dx9.h>
 
 #include "utf8_to_utf16.h"
+
+static LPGLYPHSET renderRanges = NULL;
+
+void utf8_clearRenderRanges() {
+    if (renderRanges != NULL) {
+        std::free(renderRanges);
+        renderRanges = NULL;
+    }
+}
 
 // By ChatGPT
 std::wstring utf8_to_utf16(const std::string& utf8)
@@ -37,38 +49,51 @@ std::wstring utf8_to_utf16(const std::string& utf8)
     return utf16;
 }
 
-// By ChatGPT
-bool isCambriaSupported(const std::wstring& utf16) {
-    for (wchar_t ch : utf16) {
-        // Latin
-        if ((ch >= 0x0020 && ch <= 0x007E) ||           // Basic Latin
-            (ch >= 0x00A0 && ch <= 0x00FF) ||           // Latin-1 Supplement
-            (ch >= 0x0100 && ch <= 0x017F) ||           // Latin Extended-A
-            (ch >= 0x0180 && ch <= 0x024F)) {           // Latin Extended-B
-            continue;
-        }
-
-        // Cyrillic
-        if ((ch >= 0x0400 && ch <= 0x04FF) ||           // Cyrillic
-            (ch >= 0x0500 && ch <= 0x052F)) {           // Cyrillic Supplement
-            continue;
-        }
-
-        // Greek
-        if ((ch >= 0x0370 && ch <= 0x03FF)) {           // Greek & Coptic
-            continue;
-        }
-
-        // Numbers & Punctuation
-        if ((ch >= 0x2000 && ch <= 0x206F) ||           // General punctuation
-            (ch >= 0x20A0 && ch <= 0x20CF) ||           // Currency symbols
-            (ch >= 0x2150 && ch <= 0x218F)) {           // Number fractions
-            continue;
-        }
-
-        // If character didn't match any supported block, cannot render
+bool utf8_canBeRendered(const std::wstring& utf16) {
+    if (renderRanges == NULL) {
         return false;
     }
 
+    for (wchar_t ch : utf16) {
+        bool flag = false;
+        for (DWORD ri = 0; ri < renderRanges->cRanges; ++ri) {
+            wchar_t start = renderRanges->ranges[ri].wcLow;
+            uint32_t total = renderRanges->ranges[ri].cGlyphs;
+            if (ch >= start && ch < start + total) {
+                flag = true;
+                break;
+            }
+        }
+        if (flag == false) {
+            return false;
+        }
+    }
+
     return true;
+}
+
+void utf8_reloadRenderRanges(void* d3dxFont) {
+    if (d3dxFont == NULL) {
+        return;
+    }
+    utf8_clearRenderRanges();
+    
+    ID3DXFont* font = reinterpret_cast<ID3DXFont*>(d3dxFont);
+
+    DWORD size = GetFontUnicodeRanges(font->GetDC(), NULL);
+    // This comparison is to hint static analyzer that there isn't buffer overrun on renderRanges
+    if (size < sizeof GLYPHSET) {
+        return;
+    }
+    renderRanges = reinterpret_cast<LPGLYPHSET>(std::malloc(size));
+    if (renderRanges == NULL) {
+        return;
+    }
+    renderRanges->cbThis = size;
+
+    DWORD ret = GetFontUnicodeRanges(font->GetDC(), renderRanges);
+    if (ret == 0) {
+        utf8_clearRenderRanges();
+        return;
+    }
 }

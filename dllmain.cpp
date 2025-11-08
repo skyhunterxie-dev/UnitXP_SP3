@@ -493,9 +493,15 @@ int __fastcall detoured_UnitXP(void* L) {
             string subcmd{ lua_tostring(L, 2) };
             if (subcmd == "enable") {
                 sceneEnd_useXP3combatText = true;
+                lua_pushboolean(L, sceneEnd_useXP3combatText);
+                lua_pushboolean(L, scene_isEnabled);
+                return 2;
             }
             if (subcmd == "disable") {
                 sceneEnd_useXP3combatText = false;
+                lua_pushboolean(L, sceneEnd_useXP3combatText);
+                lua_pushboolean(L, scene_isEnabled);
+                return 2;
             }
             if (subcmd == "setFontSize" && lua_gettop(L) >= 3 && lua_isnumber(L, 3)) {
                 double fontSize = lua_tonumber(L, 3);
@@ -505,9 +511,11 @@ int __fastcall detoured_UnitXP(void* L) {
                 if (fontSize > 100.0) {
                     fontSize = 100.0;
                 }
-                bool r = sceneEnd_reloadFont(static_cast<int>(fontSize));
-                lua_pushnumber(L, fontSize);
-                lua_pushboolean(L, r);
+                scene_fontSize = static_cast<int>(fontSize);
+                scene_needReloadFont = true;
+
+                lua_pushnumber(L, scene_fontSize);
+                lua_pushboolean(L, scene_isEnabled);
                 return 2;
             }
             if (subcmd == "setNameplateHeight" && lua_gettop(L) >= 3 && lua_isnumber(L, 3)) {
@@ -520,9 +528,19 @@ int __fastcall detoured_UnitXP(void* L) {
                 }
                 worldText::nameplateHeight = height;
                 lua_pushnumber(L, worldText::nameplateHeight);
-                return 1;
+                lua_pushboolean(L, scene_isEnabled);
+                return 2;
             }
-            lua_pushboolean(L, sceneEnd_useXP3combatText);
+            if (subcmd == "setFontName" && lua_gettop(L) >= 3 && lua_isstring(L, 3)) {
+                std::string userFontName = lua_tostring(L, 3);
+                scene_userSelectedFontName = userFontName;
+                scene_needReloadFont = true;
+
+                lua_pushstring(L, scene_userSelectedFontName);
+                lua_pushboolean(L, scene_isEnabled);
+                return 2;
+            }
+            lua_pushnil(L);
             return 1;
         }
         else if (cmd == "behindThreshold") {

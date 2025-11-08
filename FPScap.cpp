@@ -2,9 +2,12 @@
 
 #include <libloaderapi.h>
 
+#include <d3d9.h>
+
 #include "FPScap.h"
 #include "performanceProfiling.h"
 #include "Vanilla1121_functions.h"
+#include "sceneBegin_sceneEnd.h"
 
 GXSCENEPRESENT_0x58a960 p_GxScenePresent_0x58a960 = reinterpret_cast<GXSCENEPRESENT_0x58a960>(0x58a960);
 GXSCENEPRESENT_0x58a960 p_original_GxScenePresent_0x58a960 = NULL;
@@ -18,12 +21,24 @@ void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
     if (vanilla1121_gameInForeground()) {
         if (targetFrameInterval.QuadPart < 1) {
             p_original_GxScenePresent_0x58a960(unknown);
+            if (scene_needReloadFont) {
+                if (scene_lastDXdevice != NULL && scene_lastDXdevice->TestCooperativeLevel() == D3D_OK) {
+                    sceneEnd_reloadFont();
+                    scene_needReloadFont = false;
+                }
+            }
             return;
         }
     }
     else {
         if (backgroundFrameInterval.QuadPart < 1) {
             p_original_GxScenePresent_0x58a960(unknown);
+            if (scene_needReloadFont) {
+                if (scene_lastDXdevice != NULL && scene_lastDXdevice->TestCooperativeLevel() == D3D_OK) {
+                    sceneEnd_reloadFont();
+                    scene_needReloadFont = false;
+                }
+            }
             return;
         }
     }
@@ -55,6 +70,13 @@ void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
         nextFrameTime.QuadPart = (now.QuadPart < nextFrameTime.QuadPart + backgroundFrameInterval.QuadPart)
             ? nextFrameTime.QuadPart + backgroundFrameInterval.QuadPart
             : now.QuadPart + backgroundFrameInterval.QuadPart;
+    }
+
+    if (scene_needReloadFont) {
+        if (scene_lastDXdevice != NULL && scene_lastDXdevice->TestCooperativeLevel() == D3D_OK) {
+            sceneEnd_reloadFont();
+            scene_needReloadFont = false;
+        }
     }
 }
 
