@@ -1019,5 +1019,5 @@ uint32_t vanilla1121_gxDevice() {
 }
 
 void* vanilla1121_d3dDevice(uint32_t gxDevice) {
-    return *reinterpret_cast<void**>(vanilla1121_gxDevice() + 0x38a8);
+    return *reinterpret_cast<void**>(gxDevice + 0x38a8);
 }
