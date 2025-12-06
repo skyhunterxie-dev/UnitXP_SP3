@@ -22,9 +22,12 @@ void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
         if (targetFrameInterval.QuadPart < 1) {
             p_original_GxScenePresent_0x58a960(unknown);
             if (scene_needReloadFont) {
-                if (scene_lastDXdevice != NULL && scene_lastDXdevice->TestCooperativeLevel() == D3D_OK) {
-                    sceneEnd_reloadFont();
-                    scene_needReloadFont = false;
+                LPDIRECT3DDEVICE9 gDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(vanilla1121_d3dDevice(vanilla1121_gxDevice()));
+                if (scene_lastDXdevice != NULL
+                    && scene_lastDXdevice == gDevice
+                    && scene_lastDXdevice->TestCooperativeLevel() == D3D_OK
+                    && scene_fontsOnLost == false) {
+                    scene_reloadFont();
                 }
             }
             return;
@@ -34,9 +37,12 @@ void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
         if (backgroundFrameInterval.QuadPart < 1) {
             p_original_GxScenePresent_0x58a960(unknown);
             if (scene_needReloadFont) {
-                if (scene_lastDXdevice != NULL && scene_lastDXdevice->TestCooperativeLevel() == D3D_OK) {
-                    sceneEnd_reloadFont();
-                    scene_needReloadFont = false;
+                LPDIRECT3DDEVICE9 gDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(vanilla1121_d3dDevice(vanilla1121_gxDevice()));
+                if (scene_lastDXdevice != NULL
+                    && scene_lastDXdevice == gDevice
+                    && scene_lastDXdevice->TestCooperativeLevel() == D3D_OK
+                    && scene_fontsOnLost == false) {
+                    scene_reloadFont();
                 }
             }
             return;
@@ -73,9 +79,12 @@ void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
     }
 
     if (scene_needReloadFont) {
-        if (scene_lastDXdevice != NULL && scene_lastDXdevice->TestCooperativeLevel() == D3D_OK) {
-            sceneEnd_reloadFont();
-            scene_needReloadFont = false;
+        LPDIRECT3DDEVICE9 gDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(vanilla1121_d3dDevice(vanilla1121_gxDevice()));
+        if (scene_lastDXdevice != NULL
+            && scene_lastDXdevice == gDevice
+            && scene_lastDXdevice->TestCooperativeLevel() == D3D_OK
+            && scene_fontsOnLost == false) {
+            scene_reloadFont();
         }
     }
 }

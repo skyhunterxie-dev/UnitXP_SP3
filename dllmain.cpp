@@ -64,16 +64,16 @@ int __fastcall detoured_UnitXP(void* L) {
             uint8_t b = n >= 0.0 && n < 256.0 ? static_cast<uint8_t>(n) : 255;
 
             if (type == "crit") {
-                sceneEnd_addCritText(text, r, g, b, 255);
+                scene_addCritText(text, r, g, b, 255);
             }
             else if (type == "downward") {
-                sceneEnd_addSmallFloatingText(text, r, g, b, 255, worldText::down);
+                scene_addSmallFloatingText(text, r, g, b, 255, worldText::down);
             }
             else if (type == "arc") {
-                sceneEnd_addSmallFloatingText(text, r, g, b, 255, worldText::arc);
+                scene_addSmallFloatingText(text, r, g, b, 255, worldText::arc);
             }
             else {
-                sceneEnd_addSmallFloatingText(text, r, g, b, 255, worldText::up);
+                scene_addSmallFloatingText(text, r, g, b, 255, worldText::up);
             }
             lua_pushboolean(L, scene_isEnabled);
             return 1;
@@ -492,14 +492,14 @@ int __fastcall detoured_UnitXP(void* L) {
         else if (cmd == "combatTextSP3") {
             string subcmd{ lua_tostring(L, 2) };
             if (subcmd == "enable") {
-                sceneEnd_useXP3combatText = true;
-                lua_pushboolean(L, sceneEnd_useXP3combatText);
+                scene_useXP3combatText = true;
+                lua_pushboolean(L, scene_useXP3combatText);
                 lua_pushboolean(L, scene_isEnabled);
                 return 2;
             }
             if (subcmd == "disable") {
-                sceneEnd_useXP3combatText = false;
-                lua_pushboolean(L, sceneEnd_useXP3combatText);
+                scene_useXP3combatText = false;
+                lua_pushboolean(L, scene_useXP3combatText);
                 lua_pushboolean(L, scene_isEnabled);
                 return 2;
             }
@@ -537,6 +537,11 @@ int __fastcall detoured_UnitXP(void* L) {
                 scene_needReloadFont = true;
 
                 lua_pushstring(L, scene_userSelectedFontName);
+                lua_pushboolean(L, scene_isEnabled);
+                return 2;
+            }
+            if (subcmd == "debugText") {
+                lua_pushstring(L, scene_debugText());
                 lua_pushboolean(L, scene_isEnabled);
                 return 2;
             }
@@ -610,7 +615,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 
         editCamera_init();
 
-        sceneEnd_init();
+        scene_init();
 
         if (initFPScap() != 1) {
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to load NtDelayExecution function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);

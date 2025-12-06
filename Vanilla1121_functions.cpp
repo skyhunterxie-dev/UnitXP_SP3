@@ -1013,3 +1013,11 @@ C3Vector vectorSubtract(const C3Vector& a, const C3Vector& b) {
 bool vanilla1121_gameInForeground() {
     return GetForegroundWindow() == vanilla1121_gameWindow();
 }
+
+uint32_t vanilla1121_gxDevice() {
+    return *reinterpret_cast<uint32_t*>(0xc0ed38);
+}
+
+void* vanilla1121_d3dDevice(uint32_t gxDevice) {
+    return *reinterpret_cast<void**>(vanilla1121_gxDevice() + 0x38a8);
+}

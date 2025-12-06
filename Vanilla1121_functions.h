@@ -263,3 +263,5 @@ std::string vanilla1121_getCVar(const std::string& name);
 std::string vanilla1121_isInInstance();
 void vanilla1121_unitDisable(uint32_t unit);
 void vanilla1121_unitEnable(uint32_t unit);
+uint32_t vanilla1121_gxDevice();
+void* vanilla1121_d3dDevice(uint32_t gxDevice);

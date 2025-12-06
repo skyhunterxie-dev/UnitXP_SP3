@@ -23,19 +23,20 @@ typedef HRESULT(WINAPI* LPD3DXCREATEFFONTW)(
     LPD3DXFONT* ppFont);
 extern LPD3DXCREATEFFONTW p_D3DXCreateFontW;
 extern bool scene_isEnabled;
-extern bool sceneEnd_useXP3combatText;
+extern bool scene_useXP3combatText;
 extern bool scene_hideEXPtext;
 extern int scene_fontSize;
 extern LPDIRECT3DDEVICE9 scene_lastDXdevice;
 extern std::string scene_userSelectedFontName;
 // It seems d3d9 would crash if call reloadFont() between BeginScene() and EndScene(), so here is a bool switch to delay reloadFont() till Present() is done.
 extern bool scene_needReloadFont;
-void sceneEnd_init();
-void sceneEnd_end();
-bool sceneEnd_reloadFont();
-void sceneEnd_addSmallFloatingText(std::string text, int r, int g, int b, int a, worldText::FLOATING_DIRECTION direction);
-void sceneEnd_addCritText(std::string text, int r, int g, int b, int a);
-std::string sceneEnd_debugText();
+extern bool scene_fontsOnLost;
+void scene_init();
+void scene_end();
+bool scene_reloadFont();
+void scene_addSmallFloatingText(std::string text, int r, int g, int b, int a, worldText::FLOATING_DIRECTION direction);
+void scene_addCritText(std::string text, int r, int g, int b, int a);
+std::string scene_debugText();
 
 // The technique of hooking __thiscall function is from: https://tresp4sser.wordpress.com/2012/10/06/how-to-hook-thiscall-functions/
 // -- Pointer is __thiscall with 1st param being THIS

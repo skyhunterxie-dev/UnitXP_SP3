@@ -26,10 +26,12 @@ static ID3DXFont* scene_selectedHUGE = NULL;
 static std::list<worldText::Floating> floatingTexts{};
 static std::unordered_map<uint64_t, worldText::Crit> critTexts{};
 static std::list<worldText::Floating> smallFloatingTexts{};
-static bool scene_fontsOnLost = false;
+static bool scene_checkIfD3D = false;
+static std::string scene_disableReason{};
 
 LPDIRECT3DDEVICE9 scene_lastDXdevice = NULL;
 bool scene_needReloadFont = false;
+bool scene_fontsOnLost = false;
 bool scene_isEnabled = false;
 bool scene_hideEXPtext = false;
 int scene_fontSize = 36;
@@ -38,7 +40,7 @@ const static std::string scene_fallbackFontName{ u8"Microsoft YaHei" };
 std::string scene_userSelectedFontName{ scene_fallbackFontName };
 
 LPD3DXCREATEFFONTW p_D3DXCreateFontW = NULL;
-void sceneEnd_init() {
+void scene_init() {
     HMODULE hDLL = NULL;
     for (int ver = 43; ver >= 24; --ver) {
         std::stringstream ss{};
@@ -50,6 +52,7 @@ void sceneEnd_init() {
         }
     }
     if (hDLL == NULL) {
+        scene_disableReason = u8"UnitXP_SP3 requires d3dx9_43.dll to support anti-aliased floating combat text. Please try installing DirectX End-User Runtimes.";
         return;
     }
 
@@ -57,13 +60,18 @@ void sceneEnd_init() {
 
     if (p_D3DXCreateFontW == NULL) {
         FreeLibrary(hDLL);
+        scene_disableReason = u8"It seems d3dx9 is broken. Please try reinstalling DirectX End-User Runtimes.";
         return;
     }
 
     scene_isEnabled = true;
 }
 
-static void sceneEnd_fontPreload(ID3DXFont* font) {
+static bool scene_fontIsOutlineCapable(ID3DXFont* font) {
+    return GetOutlineTextMetricsW(font->GetDC(), 0, NULL) != 0;
+}
+
+static void scene_fontPreload(ID3DXFont* font) {
     // Visiable ASCII by ChatGPT
     font->PreloadCharacters(0x20, 0x7e);
 
@@ -80,7 +88,7 @@ static void sceneEnd_fontPreload(ID3DXFont* font) {
     font->PreloadTextW(utf8_to_utf16(u8"免疫").c_str(), 2);
 }
 
-static void sceneEnd_fontsOnLostDevice() {
+static void scene_fontsOnLostDevice() {
     if (scene_fallback != NULL) {
         scene_fallback->OnLostDevice();
     }
@@ -108,35 +116,52 @@ static void sceneEnd_fontsOnLostDevice() {
     scene_fontsOnLost = true;
 }
 
-static void sceneEnd_fontsOnResetDevice() {
+static bool scene_fontsOnResetDevice() {
     if (scene_fallback != NULL) {
-        scene_fallback->OnResetDevice();
+        if (false == SUCCEEDED(scene_fallback->OnResetDevice())) {
+            return false;
+        }
     }
     if (scene_fallbackBIG != NULL) {
-        scene_fallbackBIG->OnResetDevice();
+        if (false == SUCCEEDED(scene_fallbackBIG->OnResetDevice())) {
+            return false;
+        }
     }
     if (scene_fallbackSmall != NULL) {
-        scene_fallbackSmall->OnResetDevice();
+        if (false == SUCCEEDED(scene_fallbackSmall->OnResetDevice())) {
+            return false;
+        }
     }
     if (scene_fallbackHUGE != NULL) {
-        scene_fallbackHUGE->OnResetDevice();
+        if (false == SUCCEEDED(scene_fallbackHUGE->OnResetDevice())) {
+            return false;
+        }
     }
     if (scene_selected != NULL) {
-        scene_selected->OnResetDevice();
+        if (false == SUCCEEDED(scene_selected->OnResetDevice())) {
+            return false;
+        }
     }
     if (scene_selectedBIG != NULL) {
-        scene_selectedBIG->OnResetDevice();
+        if (false == SUCCEEDED(scene_selectedBIG->OnResetDevice())) {
+            return false;
+        }
     }
     if (scene_selectedSmall != NULL) {
-        scene_selectedSmall->OnResetDevice();
+        if (false == SUCCEEDED(scene_selectedSmall->OnResetDevice())) {
+            return false;
+        }
     }
     if (scene_selectedHUGE != NULL) {
-        scene_selectedHUGE->OnResetDevice();
+        if (false == SUCCEEDED(scene_selectedHUGE->OnResetDevice())) {
+            return false;
+        }
     }
     scene_fontsOnLost = false;
+    return true;
 }
 
-static void sceneEnd_unloadFonts() {
+static void scene_unloadFonts() {
     if (scene_fallback != NULL) {
         scene_fallback->Release();
         scene_fallback = NULL;
@@ -171,26 +196,34 @@ static void sceneEnd_unloadFonts() {
     }
 }
 
-void sceneEnd_end() {
-    sceneEnd_unloadFonts();
+void scene_end() {
+    scene_unloadFonts();
     scene_isEnabled = false;
 }
 
-bool sceneEnd_reloadFont() {
+bool scene_reloadFont() {
     if (scene_isEnabled == false) {
         return false;
     }
     else {
-        sceneEnd_unloadFonts();
+        scene_unloadFonts();
     }
 
     {
         if (scene_fallback == NULL) {
             if (false == SUCCEEDED(p_D3DXCreateFontW(scene_lastDXdevice, scene_fontSize, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_fallbackFontName).c_str(), &scene_fallback))) {
                 scene_fallback = NULL;
+                scene_isEnabled = false;
+                scene_disableReason = u8"Failed to load the fallback font. This is usually due to an imcomplete installation of the Windows operating system.";
                 return false;
             }
-            sceneEnd_fontPreload(scene_fallback);
+            if (false == scene_fontIsOutlineCapable(scene_fallback)) {
+                scene_unloadFonts();
+                scene_isEnabled = false;
+                scene_disableReason = u8"The fallback font is not outline-capable. This is usually due to an imcomplete installation of the Windows operating system.";
+                return false;
+            }
+            scene_fontPreload(scene_fallback);
         }
 
         if (scene_fallbackBIG == NULL) {
@@ -198,7 +231,7 @@ bool sceneEnd_reloadFont() {
                 scene_fallbackBIG = NULL;
                 return false;
             }
-            sceneEnd_fontPreload(scene_fallbackBIG);
+            scene_fontPreload(scene_fallbackBIG);
         }
 
         if (scene_fallbackSmall == NULL) {
@@ -206,7 +239,7 @@ bool sceneEnd_reloadFont() {
                 scene_fallbackSmall = NULL;
                 return false;
             }
-            sceneEnd_fontPreload(scene_fallbackSmall);
+            scene_fontPreload(scene_fallbackSmall);
         }
 
         if (scene_fallbackHUGE == NULL) {
@@ -214,7 +247,7 @@ bool sceneEnd_reloadFont() {
                 scene_fallbackHUGE = NULL;
                 return false;
             }
-            sceneEnd_fontPreload(scene_fallbackHUGE);
+            scene_fontPreload(scene_fallbackHUGE);
         }
     }
 
@@ -227,7 +260,16 @@ bool sceneEnd_reloadFont() {
                     return false;
                 }
             }
-            sceneEnd_fontPreload(scene_selected);
+            if (false == scene_fontIsOutlineCapable(scene_selected)) {
+                scene_selected->Release();
+                scene_selected = NULL;
+                scene_userSelectedFontName = scene_fallbackFontName;
+                if (false == SUCCEEDED(p_D3DXCreateFontW(scene_lastDXdevice, scene_fontSize, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_userSelectedFontName).c_str(), &scene_selected))) {
+                    scene_selected = NULL;
+                    return false;
+                }
+            }
+            scene_fontPreload(scene_selected);
             utf8_reloadRenderRanges(reinterpret_cast<void*>(scene_selected));
         }
 
@@ -236,7 +278,7 @@ bool sceneEnd_reloadFont() {
                 scene_selectedBIG = NULL;
                 return false;
             }
-            sceneEnd_fontPreload(scene_selectedBIG);
+            scene_fontPreload(scene_selectedBIG);
         }
 
         if (scene_selectedSmall == NULL) {
@@ -244,7 +286,7 @@ bool sceneEnd_reloadFont() {
                 scene_selectedSmall = NULL;
                 return false;
             }
-            sceneEnd_fontPreload(scene_selectedSmall);
+            scene_fontPreload(scene_selectedSmall);
         }
 
         if (scene_selectedHUGE == NULL) {
@@ -252,32 +294,54 @@ bool sceneEnd_reloadFont() {
                 scene_selectedHUGE = NULL;
                 return false;
             }
-            sceneEnd_fontPreload(scene_selectedHUGE);
+            scene_fontPreload(scene_selectedHUGE);
         }
     }
 
+    scene_needReloadFont = false;
     return true;
 }
 
 ISCENEBEGIN p_sceneBegin = reinterpret_cast<ISCENEBEGIN>(0x5a1680);
 ISCENEBEGIN p_original_sceneBegin = NULL;
 void __fastcall detoured_sceneBegin(uint32_t CGxDevice, void* ignored, uint32_t unknown) {
-    LPDIRECT3DDEVICE9 dxDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(*reinterpret_cast<uint32_t*>(CGxDevice + 0x38a8));
+    if (scene_isEnabled == false) {
+        p_original_sceneBegin(CGxDevice, unknown);
+        return;
+    }
+
+    if (scene_checkIfD3D == false) {
+        if (vanilla1121_getCVar("gxApi") != "direct3d") {
+            scene_isEnabled = false;
+            p_original_sceneBegin(CGxDevice, unknown);
+            scene_disableReason = u8"UnitXP_SP3 only supports the Direct3D renderer. OpenGL is not supported.";
+            return;
+        }
+        else {
+            scene_checkIfD3D = true;
+        }
+    }
+
+    LPDIRECT3DDEVICE9 dxDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(vanilla1121_d3dDevice(CGxDevice));
+    if (dxDevice == NULL || (reinterpret_cast<uintptr_t>(dxDevice) & 1) != 0) {
+        p_original_sceneBegin(CGxDevice, unknown);
+        return;
+    }
+
     HRESULT test = dxDevice->TestCooperativeLevel();
-    if (D3DERR_DEVICELOST == test || D3DERR_DEVICENOTRESET == test) {
+    if (D3DERR_DEVICELOST == test) {
         if (scene_fontsOnLost == false) {
-            sceneEnd_fontsOnLostDevice();
+            scene_fontsOnLostDevice();
+        }
+    }
+
+    if (D3D_OK == test || D3DERR_DEVICENOTRESET == test) {
+        if (scene_fontsOnLost == true) {
+            scene_fontsOnResetDevice();
         }
     }
 
     p_original_sceneBegin(CGxDevice, unknown);
-
-    test = dxDevice->TestCooperativeLevel();
-    if (D3D_OK == test) {
-        if (scene_fontsOnLost == true) {
-            sceneEnd_fontsOnResetDevice();
-        }
-    }
 }
 
 ISCENEEND p_sceneEnd = reinterpret_cast<ISCENEEND>(0x5a17a0);
@@ -286,7 +350,11 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
     if (*reinterpret_cast<uint32_t*>(CGxDevice + 0x3a38) != NULL
         && scene_isEnabled == true
         && scene_fontsOnLost == false && scene_needReloadFont == false) {
-        LPDIRECT3DDEVICE9 dxDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(*reinterpret_cast<uint32_t*>(CGxDevice + 0x38a8));
+        LPDIRECT3DDEVICE9 dxDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(vanilla1121_d3dDevice(CGxDevice));
+        if (dxDevice == NULL || (reinterpret_cast<uintptr_t>(dxDevice) & 1) != 0) {
+            p_original_sceneEnd(CGxDevice);
+            return;
+        }
         if (dxDevice != scene_lastDXdevice) {
             scene_lastDXdevice = dxDevice;
             scene_needReloadFont = true;
@@ -445,13 +513,18 @@ static void sortAddNewFloatingText(worldText::Floating& newText, std::list<world
 static std::unordered_map<int, std::string> worldTextHistory{};
 CREATEWORLDTEXT p_createWorldText = reinterpret_cast<CREATEWORLDTEXT>(0x6c73f0);
 CREATEWORLDTEXT p_original_createWorldText = NULL;
-bool sceneEnd_useXP3combatText = false;
+bool scene_useXP3combatText = false;
 void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type, char const* text, uint32_t color, uint32_t unknown) {
     if (scene_hideEXPtext && type == 4) {
         return;
     }
 
-    if (false == sceneEnd_useXP3combatText) {
+    if (false == scene_useXP3combatText) {
+        p_original_createWorldText(self, type, text, color, unknown);
+        return;
+    }
+
+    if (false == scene_isEnabled) {
         p_original_createWorldText(self, type, text, color, unknown);
         return;
     }
@@ -546,7 +619,10 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
     }
 }
 
-void sceneEnd_addSmallFloatingText(std::string text, int r, int g, int b, int a, worldText::FLOATING_DIRECTION direction) {
+void scene_addSmallFloatingText(std::string text, int r, int g, int b, int a, worldText::FLOATING_DIRECTION direction) {
+    if (scene_isEnabled == false) {
+        return;
+    }
     if (scene_lastDXdevice == NULL || scene_fallback == NULL || scene_fallbackBIG == NULL || scene_fallbackHUGE == NULL || scene_fallbackSmall == NULL
         || scene_selected == NULL || scene_selectedBIG == NULL || scene_selectedHUGE == NULL || scene_selectedSmall == NULL) {
         return;
@@ -563,7 +639,10 @@ void sceneEnd_addSmallFloatingText(std::string text, int r, int g, int b, int a,
     sortAddNewFloatingText(newText, smallFloatingTexts, floatingTexts);
 }
 
-void sceneEnd_addCritText(std::string text, int r, int g, int b, int a) {
+void scene_addCritText(std::string text, int r, int g, int b, int a) {
+    if (scene_isEnabled == false) {
+        return;
+    }
     if (scene_lastDXdevice == NULL || scene_fallback == NULL || scene_fallbackBIG == NULL || scene_fallbackHUGE == NULL || scene_fallbackSmall == NULL
         || scene_selected == NULL || scene_selectedBIG == NULL || scene_selectedHUGE == NULL || scene_selectedSmall == NULL) {
         return;
@@ -593,11 +672,19 @@ void sceneEnd_addCritText(std::string text, int r, int g, int b, int a) {
     critTexts.insert({ player, newCrit });
 }
 
-std::string sceneEnd_debugText() {
+std::string scene_debugText() {
     std::stringstream ss{};
-    ss << "Unimplemented world text history:";
-    for (auto& i : worldTextHistory) {
-        ss << std::endl << i.second;
+
+    if (worldTextHistory.size() > 0) {
+        ss << "Unimplemented world text history:";
+        for (auto& i : worldTextHistory) {
+            ss << std::endl << i.second;
+        }
     }
+
+    if (scene_disableReason.length() > 0) {
+        ss << scene_disableReason << std::endl;
+    }
+
     return ss.str();
 }
