@@ -32,6 +32,7 @@
 #include "weather.h"
 #include "polyfill.h"
 #include "sceneBegin_sceneEnd.h"
+#include "relativeDirection.h"
 
 using namespace std;
 
@@ -109,6 +110,17 @@ int __fastcall detoured_UnitXP(void* L) {
 
             float result = UnitXP_distanceBetween(lua_tostring(L, 2), lua_tostring(L, 3), meter);
             if (result >= 0) {
+                lua_pushnumber(L, result);
+                return 1;
+            }
+            else {
+                lua_pushnil(L);
+                return 1;
+            }
+        }
+        else if (cmd == "relativeDirection" && lua_gettop(L) >= 3) {
+            int result = UnitXP_relativeDirection(lua_tostring(L, 2), lua_tostring(L, 3));
+            if (result != -999) {
                 lua_pushnumber(L, result);
                 return 1;
             }
