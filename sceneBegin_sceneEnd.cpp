@@ -311,10 +311,13 @@ void __fastcall detoured_sceneBegin(uint32_t CGxDevice, void* ignored, uint32_t 
     }
 
     if (scene_checkIfD3D == false) {
-        if (vanilla1121_getCVar("gxApi") != "direct3d") {
+        std::string currentAPI{ vanilla1121_getCVar("gxApi") };
+        if (currentAPI != "direct3d") {
             scene_isEnabled = false;
             p_original_sceneBegin(CGxDevice, unknown);
-            scene_disableReason = u8"UnitXP_SP3 only supports the Direct3D renderer. OpenGL is not supported.";
+            std::stringstream ss{};
+            ss << "UnitXP_SP3 supports only the \"direct3d\" renderer. Currently the game is using \"" << currentAPI << "\".";
+            scene_disableReason = ss.str();
             return;
         }
         else {
