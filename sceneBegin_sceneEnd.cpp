@@ -23,6 +23,7 @@ static ID3DXFont* scene_selected = NULL;
 static ID3DXFont* scene_selectedBIG = NULL;
 static ID3DXFont* scene_selectedSmall = NULL;
 static ID3DXFont* scene_selectedHUGE = NULL;
+static bool scene_attemptFontsReset = false;
 static std::list<worldText::Floating> floatingTexts{};
 static std::unordered_map<uint64_t, worldText::Crit> critTexts{};
 static std::list<worldText::Floating> smallFloatingTexts{};
@@ -302,6 +303,8 @@ bool scene_reloadFont() {
     return true;
 }
 
+
+
 ISCENEBEGIN p_sceneBegin = reinterpret_cast<ISCENEBEGIN>(0x5a1680);
 ISCENEBEGIN p_original_sceneBegin = NULL;
 void __fastcall detoured_sceneBegin(uint32_t CGxDevice, void* ignored, uint32_t unknown) {
@@ -331,20 +334,35 @@ void __fastcall detoured_sceneBegin(uint32_t CGxDevice, void* ignored, uint32_t 
         return;
     }
 
-    HRESULT test = dxDevice->TestCooperativeLevel();
-    if (D3DERR_DEVICELOST == test) {
-        if (scene_fontsOnLost == false) {
-            scene_fontsOnLostDevice();
+    // DX9 DEVICE LOSS RULE by ChatGPT:
+    // OnLostDevice() is ONLY called when TestCooperativeLevel() == D3DERR_DEVICENOTRESET
+    // NEVER call it when DEVICELOST
+    // And
+    // ID3DXFont::OnResetDevice() must be called after IDirect3DDevice9::Reset(), and before any BeginScene().
+    if (D3DERR_DEVICENOTRESET == dxDevice->TestCooperativeLevel()) {
+        if (0 == *reinterpret_cast<int*>(CGxDevice + 0xf2c)) {
+            // The game would call IDirect3DDevice9::Reset() in its sceneBegin function soon
+            if (scene_fontsOnLost == false) {
+                scene_fontsOnLostDevice();
+            }
         }
     }
 
-    if (D3D_OK == test || D3DERR_DEVICENOTRESET == test) {
-        if (scene_fontsOnLost == true) {
+    scene_attemptFontsReset = true;
+    p_original_sceneBegin(CGxDevice, unknown);
+    scene_attemptFontsReset = false;
+}
+
+AFTERD3DRESET p_afterD3Dreset = reinterpret_cast<AFTERD3DRESET>(0x5a24a0);
+AFTERD3DRESET p_original_afterD3Dreset = NULL;
+void __fastcall detoured_afterD3Dreset(uint32_t CGxDevice, void* ignored) {
+    if (scene_attemptFontsReset) {
+        if (scene_fontsOnLost) {
             scene_fontsOnResetDevice();
         }
     }
 
-    p_original_sceneBegin(CGxDevice, unknown);
+    p_original_afterD3Dreset(CGxDevice);
 }
 
 ISCENEEND p_sceneEnd = reinterpret_cast<ISCENEEND>(0x5a17a0);

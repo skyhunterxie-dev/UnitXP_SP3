@@ -52,6 +52,12 @@ extern ISCENEEND p_sceneEnd;
 extern ISCENEEND p_original_sceneEnd;
 void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored);
 
+// I'm not sure if this function is __thiscall or __fastcall
+typedef void(__thiscall* AFTERD3DRESET)(uint32_t);
+extern AFTERD3DRESET p_afterD3Dreset;
+extern AFTERD3DRESET p_original_afterD3Dreset;
+void __fastcall detoured_afterD3Dreset(uint32_t CGxDevice, void* ignored);
+
 typedef void(__thiscall* CREATEWORLDTEXT)(uint32_t, int, char const*, uint32_t, uint32_t);
 extern CREATEWORLDTEXT p_createWorldText;
 extern CREATEWORLDTEXT p_original_createWorldText;
