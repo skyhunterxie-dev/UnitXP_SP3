@@ -315,8 +315,23 @@ void __fastcall detoured_sceneBegin(uint32_t CGxDevice, void* ignored, uint32_t 
     }
 
     if (scene_checkIfD3D == false) {
-        std::string currentAPI{ vanilla1121_getCVar("gxApi") };
-        if (currentAPI != "direct3d") {
+        char* tempBuffer = new(std::nothrow) char[64];
+        if (tempBuffer == nullptr) {
+            p_original_sceneBegin(CGxDevice, unknown);
+            return;
+        }
+
+        int len = GetClassNameA(vanilla1121_gameWindow(), tempBuffer, 64);
+        if (len == 0) {
+            delete[] tempBuffer;
+            p_original_sceneBegin(CGxDevice, unknown);
+            return;
+        }
+
+        std::string currentAPI{ tempBuffer };
+        delete[] tempBuffer;
+        
+        if (currentAPI.find(u8"D3d") == std::string::npos) {
             scene_isEnabled = false;
             p_original_sceneBegin(CGxDevice, unknown);
             std::stringstream ss{};
