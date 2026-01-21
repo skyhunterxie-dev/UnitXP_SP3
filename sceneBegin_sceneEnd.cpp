@@ -24,6 +24,7 @@ static ID3DXFont* scene_selectedBIG = NULL;
 static ID3DXFont* scene_selectedSmall = NULL;
 static ID3DXFont* scene_selectedHUGE = NULL;
 static bool scene_attemptFontsReset = false;
+static int scene_delayDetouredSceneEnd = 2; // Google Gemini suggests skipping rendering d3dx9 text after a successfull Reset().
 static std::list<worldText::Floating> floatingTexts{};
 static std::unordered_map<uint64_t, worldText::Crit> critTexts{};
 static std::list<worldText::Floating> smallFloatingTexts{};
@@ -359,6 +360,7 @@ void __fastcall detoured_afterD3Dreset(uint32_t CGxDevice, void* ignored) {
     if (scene_attemptFontsReset) {
         if (scene_fontsOnLost) {
             scene_fontsOnResetDevice();
+            scene_delayDetouredSceneEnd = 2;
         }
     }
 
@@ -368,7 +370,8 @@ void __fastcall detoured_afterD3Dreset(uint32_t CGxDevice, void* ignored) {
 ISCENEEND p_sceneEnd = reinterpret_cast<ISCENEEND>(0x5a17a0);
 ISCENEEND p_original_sceneEnd = NULL;
 void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
-    if (*reinterpret_cast<uint32_t*>(CGxDevice + 0x3a38) != NULL
+    if (scene_delayDetouredSceneEnd <= 0
+        && *reinterpret_cast<uint32_t*>(CGxDevice + 0x3a38) != NULL
         && scene_isEnabled == true
         && scene_fontsOnLost == false && scene_needReloadFont == false) {
         LPDIRECT3DDEVICE9 dxDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(vanilla1121_d3dDevice(CGxDevice));
@@ -488,6 +491,10 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
             it++;
         }
 
+    }
+
+    if (scene_delayDetouredSceneEnd > 0) {
+        --scene_delayDetouredSceneEnd;
     }
 
     p_original_sceneEnd(CGxDevice);
