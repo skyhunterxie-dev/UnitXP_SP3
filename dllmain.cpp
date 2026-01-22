@@ -617,10 +617,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 
         scene_init();
 
-        if (initFPScap() != 1) {
-            MessageBoxW(NULL, utf8_to_utf16(u8"Failed to load NtDelayExecution function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-            return FALSE;
-        }
+        initFPScap();
 
         if (edit_CWorld_Intersect_init() == false) {
             return FALSE;

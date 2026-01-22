@@ -10,6 +10,7 @@
 #include "gameSocket.h"
 #include "polyfill.h"
 #include "sceneBegin_sceneEnd.h"
+#include "FPScap.h"
 
 static const int perfSlotsTotal = 16;
 
@@ -115,6 +116,7 @@ std::string perfSummary() {
     ss << "TCP quick ACK: " << gameSocket_isQuickACK() << std::endl;
     ss << "TCP fixed receiving window: " << gameSocket_hasBiggerWindow() << std::endl;
     ss << "IP smaller MTU: " << gameSocket_hasSmallerMTU() << std::endl;
+    ss << debugFPScap() << std::endl;
     ss << getPolyfillDebug() << std::endl;
     ss << scene_debugText() << std::endl;
     for (int i = 0; i < perfSlotsTotal; ++i) {

@@ -1,21 +1,30 @@
 ﻿#include "pch.h"
 
-#include <libloaderapi.h>
-
+#include <Windows.h>
 #include <d3d9.h>
+
+#include <string>
+#include <sstream>
 
 #include "FPScap.h"
 #include "performanceProfiling.h"
 #include "Vanilla1121_functions.h"
 #include "sceneBegin_sceneEnd.h"
+#include "utf8_to_utf16.h"
 
 GXSCENEPRESENT_0x58a960 p_GxScenePresent_0x58a960 = reinterpret_cast<GXSCENEPRESENT_0x58a960>(0x58a960);
 GXSCENEPRESENT_0x58a960 p_original_GxScenePresent_0x58a960 = NULL;
-NTDELAYEXECUTION NtDelayExecution = NULL;
+
+typedef UINT(WINAPI* NTDELAYEXECUTION)(BOOL, LARGE_INTEGER*);
+static NTDELAYEXECUTION NtDelayExecution;
+
 LARGE_INTEGER targetFrameInterval = {};
 LARGE_INTEGER backgroundFrameInterval = {};
 
 static LARGE_INTEGER nextFrameTime = {};
+static int fpsMethod = 0; // 1 for NtDelayExecution()
+static LARGE_INTEGER fpsSpinning = {};
+static LARGE_INTEGER fpsResolutionUnit = {}; // Unit is 100 nanosecond intervals
 
 void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
     if (vanilla1121_gameInForeground()) {
@@ -49,24 +58,33 @@ void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
         }
     }
 
-    // From https://github.com/doitsujin/dxvk/blob/4799558d322f67d1ff8f2c3958ff03e776b65bc6/src/util/util_fps_limiter.cpp#L51
-
     LARGE_INTEGER now = {};
     QueryPerformanceCounter(&now);
 
-    if (now.QuadPart < nextFrameTime.QuadPart) {
-        LARGE_INTEGER sleep = {};
+    LARGE_INTEGER sleep = {};
+    sleep.QuadPart = nextFrameTime.QuadPart - now.QuadPart;
+    if (sleep.QuadPart > fpsSpinning.QuadPart) {
+        // Negative values indicate relative time
+        // NtDelayExecution https://ntdoc.m417z.com/ntdelayexecution
+        sleep.QuadPart -= fpsSpinning.QuadPart;
+        sleep.QuadPart /= fpsResolutionUnit.QuadPart;
+        sleep.QuadPart = -sleep.QuadPart;
 
-        // Convert sleep time to microseconds(us) from https://learn.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps#using-qpc-in-native-code
-        // Align with NtDelayExecution from https://ntdoc.m417z.com/ntdelayexecution
-        sleep.QuadPart = (nextFrameTime.QuadPart - now.QuadPart) * 1000000 * -10;
-        sleep.QuadPart /= getPerformanceCounterFrequency().QuadPart;
+        if (fpsMethod == 1) {
+            NtDelayExecution(FALSE, &sleep);
+        }
+    }
 
-        NtDelayExecution(FALSE, &sleep);
+    // Spinning for the tail
+    QueryPerformanceCounter(&now);
+    while (now.QuadPart < nextFrameTime.QuadPart) {
+        YieldProcessor();
+        QueryPerformanceCounter(&now);
     }
 
     p_original_GxScenePresent_0x58a960(unknown);
 
+    // From https://github.com/doitsujin/dxvk/blob/4799558d322f67d1ff8f2c3958ff03e776b65bc6/src/util/util_fps_limiter.cpp#L51
     if (vanilla1121_gameInForeground()) {
         nextFrameTime.QuadPart = (now.QuadPart < nextFrameTime.QuadPart + targetFrameInterval.QuadPart)
             ? nextFrameTime.QuadPart + targetFrameInterval.QuadPart
@@ -89,23 +107,41 @@ void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
     }
 }
 
-int initFPScap() {
+void initFPScap() {
     targetFrameInterval.QuadPart = 0;
     backgroundFrameInterval.QuadPart = 0;
     nextFrameTime.QuadPart = 0;
+    fpsSpinning.QuadPart = getPerformanceCounterFrequency().QuadPart / 250; // Some Linux default to 250 for CONFIG_HZ
+    fpsResolutionUnit.QuadPart = getPerformanceCounterFrequency().QuadPart / 10000000;
 
-    // from https://github.com/doitsujin/dxvk/blob/4799558d322f67d1ff8f2c3958ff03e776b65bc6/src/util/util_sleep.cpp#L38
     HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
     if (ntdll) {
         NtDelayExecution = reinterpret_cast<NTDELAYEXECUTION>(GetProcAddress(ntdll, "NtDelayExecution"));
-        if (NtDelayExecution) {
-            return 1;
-        }
-        else {
-            return 0;
+        if (NtDelayExecution == NULL) {
+            // Fallback to spinning
+            fpsMethod = 0;
+            return;
         }
     }
     else {
-        return 0;
+        // Fallback to spinning
+        fpsMethod = 0;
+        return;
     }
+
+    fpsMethod = 1;
+    return;
+}
+
+std::string debugFPScap() {
+    std::stringstream ss{};
+    ss << "FPS cap timing method: ";
+    if (fpsMethod == 1) {
+        ss << "NtDelayExecution() with tail spinning";
+    }
+    else {
+        ss << "spinning";
+    }
+
+    return ss.str();
 }
