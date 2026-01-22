@@ -78,7 +78,15 @@ void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
     // Spinning for the tail
     QueryPerformanceCounter(&now);
     while (now.QuadPart < nextFrameTime.QuadPart) {
-        YieldProcessor();
+        if (vanilla1121_gameInForeground()) {
+            YieldProcessor();
+        }
+        else {
+            // For background, we try to give our time slice to others
+            if (0 == SwitchToThread()) {
+                YieldProcessor();
+            }
+        }
         QueryPerformanceCounter(&now);
     }
 
