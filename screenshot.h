@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <cstdint>
 
@@ -10,3 +10,10 @@ int __fastcall detoured_CTgaFile_Write_0x5a4810(uint32_t self, void* ignored, ch
 
 extern CTGAFILE_WRITE_0x5a4810 p_CTgaFile_Write_0x5a4810;
 extern CTGAFILE_WRITE_0x5a4810 p_original_CTgaFile_Write_0x5a4810;
+
+enum SCREENSHOT_FILETYPE {
+    jpg,
+    png
+};
+
+extern SCREENSHOT_FILETYPE screenshot_filetype;
