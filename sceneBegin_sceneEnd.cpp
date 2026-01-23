@@ -119,6 +119,9 @@ static void scene_fontsOnLostDevice() {
 }
 
 static bool scene_fontsOnResetDevice() {
+
+    scene_delayDetouredSceneEnd = 2;
+
     if (scene_fallback != NULL) {
         if (false == SUCCEEDED(scene_fallback->OnResetDevice())) {
             return false;
@@ -210,6 +213,8 @@ bool scene_reloadFont() {
     else {
         scene_unloadFonts();
     }
+
+    scene_delayDetouredSceneEnd = 2;
 
     {
         if (scene_fallback == NULL) {
@@ -375,7 +380,6 @@ void __fastcall detoured_afterD3Dreset(uint32_t CGxDevice, void* ignored) {
     if (scene_attemptFontsReset) {
         if (scene_fontsOnLost) {
             scene_fontsOnResetDevice();
-            scene_delayDetouredSceneEnd = 2;
         }
     }
 

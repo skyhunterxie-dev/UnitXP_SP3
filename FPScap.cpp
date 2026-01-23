@@ -27,7 +27,9 @@ static LARGE_INTEGER fpsSpinning = {};
 static LARGE_INTEGER fpsResolutionUnit = {}; // Unit is 100 nanosecond intervals
 
 void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
-    if (vanilla1121_gameInForeground()) {
+    bool inForeground = vanilla1121_gameInForeground();
+
+    if (inForeground) {
         if (targetFrameInterval.QuadPart < 1) {
             p_original_GxScenePresent_0x58a960(unknown);
             if (scene_needReloadFont) {
@@ -78,7 +80,7 @@ void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
     // Spinning for the tail
     QueryPerformanceCounter(&now);
     while (now.QuadPart < nextFrameTime.QuadPart) {
-        if (vanilla1121_gameInForeground()) {
+        if (inForeground) {
             YieldProcessor();
         }
         else {
@@ -93,7 +95,7 @@ void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
     p_original_GxScenePresent_0x58a960(unknown);
 
     // From https://github.com/doitsujin/dxvk/blob/4799558d322f67d1ff8f2c3958ff03e776b65bc6/src/util/util_fps_limiter.cpp#L51
-    if (vanilla1121_gameInForeground()) {
+    if (inForeground) {
         nextFrameTime.QuadPart = (now.QuadPart < nextFrameTime.QuadPart + targetFrameInterval.QuadPart)
             ? nextFrameTime.QuadPart + targetFrameInterval.QuadPart
             : now.QuadPart + targetFrameInterval.QuadPart;
