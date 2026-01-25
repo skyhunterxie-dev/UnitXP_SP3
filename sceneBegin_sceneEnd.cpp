@@ -24,12 +24,16 @@ static ID3DXFont* scene_selectedBIG = NULL;
 static ID3DXFont* scene_selectedSmall = NULL;
 static ID3DXFont* scene_selectedHUGE = NULL;
 static bool scene_attemptFontsReset = false;
-static int scene_delayDetouredSceneEnd = 2; // Google Gemini suggests skipping rendering d3dx9 text after a successfull Reset().
 static std::list<worldText::Floating> floatingTexts{};
 static std::unordered_map<uint64_t, worldText::Crit> critTexts{};
 static std::list<worldText::Floating> smallFloatingTexts{};
 static bool scene_checkIfD3D = false;
 static std::string scene_disableReason{};
+
+// Google Gemini suggests skipping rendering d3dx9 text after a successfull Reset().
+// It suggests that the game might need a few frames to finish its GPU initialization.
+// https://codeberg.org/konaka/UnitXP_SP3/issues/13 reports this solution works
+static int scene_delayDetouredSceneEnd = 2;
 
 LPDIRECT3DDEVICE9 scene_lastDXdevice = NULL;
 bool scene_needReloadFont = false;

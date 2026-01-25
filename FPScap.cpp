@@ -1,6 +1,9 @@
 ﻿#include "pch.h"
 
+#pragma comment(lib, "Winmm.lib")
+
 #include <Windows.h>
+#include <timeapi.h>
 #include <d3d9.h>
 
 #include <string>
@@ -15,8 +18,8 @@
 GXSCENEPRESENT_0x58a960 p_GxScenePresent_0x58a960 = reinterpret_cast<GXSCENEPRESENT_0x58a960>(0x58a960);
 GXSCENEPRESENT_0x58a960 p_original_GxScenePresent_0x58a960 = NULL;
 
-typedef UINT(WINAPI* NTDELAYEXECUTION)(BOOL, LARGE_INTEGER*);
-static NTDELAYEXECUTION NtDelayExecution;
+typedef LONG(NTAPI* NTDELAYEXECUTION)(BOOLEAN Alertable, PLARGE_INTEGER DelayInterval);
+static NTDELAYEXECUTION NtDelayExecution = NULL;
 
 LARGE_INTEGER targetFrameInterval = {};
 LARGE_INTEGER backgroundFrameInterval = {};
@@ -24,7 +27,9 @@ LARGE_INTEGER backgroundFrameInterval = {};
 static LARGE_INTEGER nextFrameTime = {};
 static int fpsMethod = 0; // 1 for NtDelayExecution()
 static LARGE_INTEGER fpsSpinning = {};
-static LARGE_INTEGER fpsResolutionUnit = {}; // Unit is 100 nanosecond intervals
+static LARGE_INTEGER fpsResolutionUnit = {}; // Same as timerPrecision but in CPU ticks.
+static MMRESULT timerPrecisionSet = TIMERR_NOCANDO;
+static const UINT timerPrecision = 2u;
 
 void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
     bool inForeground = vanilla1121_gameInForeground();
@@ -65,12 +70,17 @@ void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
 
     LARGE_INTEGER sleep = {};
     sleep.QuadPart = nextFrameTime.QuadPart - now.QuadPart;
+
+    // In case spinning time is shorter, we might miss the timing
+    if (fpsResolutionUnit.QuadPart > fpsSpinning.QuadPart) {
+        sleep.QuadPart -= fpsResolutionUnit.QuadPart;
+    }
+
     if (sleep.QuadPart > fpsSpinning.QuadPart) {
-        // Negative values indicate relative time
-        // NtDelayExecution https://ntdoc.m417z.com/ntdelayexecution
         sleep.QuadPart -= fpsSpinning.QuadPart;
-        sleep.QuadPart /= fpsResolutionUnit.QuadPart;
-        sleep.QuadPart = -sleep.QuadPart;
+        sleep.QuadPart *= 10000000;
+        sleep.QuadPart /= getPerformanceCounterFrequency().QuadPart;
+        sleep.QuadPart = -sleep.QuadPart; // Negative values indicate relative time
 
         if (fpsMethod == 1) {
             NtDelayExecution(FALSE, &sleep);
@@ -122,7 +132,6 @@ void initFPScap() {
     backgroundFrameInterval.QuadPart = 0;
     nextFrameTime.QuadPart = 0;
     fpsSpinning.QuadPart = getPerformanceCounterFrequency().QuadPart / 250; // Some Linux default to 250 for CONFIG_HZ
-    fpsResolutionUnit.QuadPart = getPerformanceCounterFrequency().QuadPart / 10000000;
 
     HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
     if (ntdll) {
@@ -140,7 +149,23 @@ void initFPScap() {
     }
 
     fpsMethod = 1;
+
+    timerPrecisionSet = timeBeginPeriod(timerPrecision);
+
+    if (timerPrecisionSet == TIMERR_NOERROR) {
+        fpsResolutionUnit.QuadPart = getPerformanceCounterFrequency().QuadPart / (1000 / timerPrecision);
+    }
+    else {
+        fpsResolutionUnit.QuadPart = getPerformanceCounterFrequency().QuadPart / 64;
+    }
+
     return;
+}
+
+void endFPScap() {
+    if (timerPrecisionSet == TIMERR_NOERROR) {
+        timeEndPeriod(timerPrecision);
+    }
 }
 
 std::string debugFPScap() {

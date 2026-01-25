@@ -9,6 +9,7 @@ extern GXSCENEPRESENT_0x58a960 p_original_GxScenePresent_0x58a960;
 void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown);
 
 void initFPScap();
+void endFPScap();
 std::string debugFPScap();
 
 extern LARGE_INTEGER targetFrameInterval;
