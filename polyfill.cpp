@@ -553,5 +553,5 @@ void* __stdcall detoured_SMemAlloc(uint32_t size, char* sourcePath, DWORD unknow
     // This is inspired by https://github.com/doitsujin/dxvk/commit/9d5dd98ac79e28ca975abbba64931e1c2ae3a798
     const uint32_t additionalPadding = 8u;
     uint32_t alignedSize = (size + additionalPadding + std::hardware_destructive_interference_size - 1u) & ~(std::hardware_destructive_interference_size - 1u);
-    return p_original_SMemAlloc(size, sourcePath, unknown, clearToZero);
+    return p_original_SMemAlloc(alignedSize, sourcePath, unknown, clearToZero);
 }
