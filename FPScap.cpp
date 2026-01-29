@@ -108,6 +108,9 @@ void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
 
     p_original_GxScenePresent_0x58a960(unknown);
 
+    // It is necessary to query a new timestamp, because IDirect3DDevice9::Present() can block
+    QueryPerformanceCounter(&now);
+
     // From https://github.com/doitsujin/dxvk/blob/4799558d322f67d1ff8f2c3958ff03e776b65bc6/src/util/util_fps_limiter.cpp#L51
     if (inForeground) {
         nextFrameTime.QuadPart = (now.QuadPart < nextFrameTime.QuadPart + targetFrameInterval.QuadPart)
