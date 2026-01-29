@@ -61,7 +61,6 @@ namespace CppTime
     using clock = std::chrono::high_resolution_clock;
     using timestamp = std::chrono::time_point<clock>;
     using duration = std::chrono::microseconds;
-    const auto timeslice = duration(1000 * 1000 / 80); // Expected execution timeslice (it's a loose expectation)
 
     // Private definitions. Do not rely on this namespace.
     namespace detail
@@ -262,7 +261,7 @@ namespace CppTime
             }
 
             auto start = clock::now();
-            if (trigger.try_lock_for(timeslice))
+            if (trigger.try_lock_for(std::chrono::milliseconds(1)))
             {
                 if (done || threadIsRunning == false)
                 {
@@ -271,7 +270,7 @@ namespace CppTime
                 }
 
                 void* L = GetContext();
-                while (!done && threadIsRunning && clock::now() - start <= timeslice && execution_fifo.size() > 0)
+                while (!done && threadIsRunning && (clock::now() - start <= std::chrono::milliseconds(2)) && (execution_fifo.size() > 0))
                 {
                     const auto& [ref, handler, luaExecutionState] = execution_fifo.front();
 
