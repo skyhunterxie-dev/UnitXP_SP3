@@ -1021,3 +1021,44 @@ uint32_t vanilla1121_gxDevice() {
 void* vanilla1121_d3dDevice(uint32_t gxDevice) {
     return *reinterpret_cast<void**>(gxDevice + 0x38a8);
 }
+
+void vanilla1121_luaBegin(uint32_t& savingPreviousExecutionStateTo, const uint32_t beginningExecutionState) {
+    // Contributed by MarcelineVQ
+    int* counter = reinterpret_cast<int*>(0xCEEAC4);
+    uint32_t* state = reinterpret_cast<uint32_t*>(0xCEEAC0);
+
+    savingPreviousExecutionStateTo = *state;
+
+    (*counter)++;
+
+    if (*counter != 0) {
+        *state = beginningExecutionState;
+    }
+}
+
+void vanilla1121_luaEnd(const uint32_t savedExecutionStateToRestore) {
+    // Contributed by MarcelineVQ
+    int* counter = reinterpret_cast<int*>(0xCEEAC4);
+    uint32_t* state = reinterpret_cast<uint32_t*>(0xCEEAC0);
+
+    if (*counter != 0) {
+        *state = savedExecutionStateToRestore;
+    }
+    
+
+    (*counter)--;
+    if (*counter < 0) {
+        *counter = 0;
+    }
+}
+
+uint32_t vanilla1121_luaExecutionState() {
+    // Contributed by MarcelineVQ
+    return *reinterpret_cast<uint32_t*>(0xCEEAC0);
+}
+
+int lua_pcall(void* L, int nArgs, int nResults, int errFunction) {
+    typedef int(__fastcall* LUA_PCALL)(void* L, int nArgs, int nResults, int errFunction);
+    auto p_lua_pcall = reinterpret_cast<LUA_PCALL>(0x6F41A0);
+    return p_lua_pcall(L, nArgs, nResults, errFunction);
+}

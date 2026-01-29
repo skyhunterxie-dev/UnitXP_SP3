@@ -151,6 +151,8 @@ void lua_gettable(void* L, int index);
 void lua_settable(void* L, int index);
 int lua_next(void* L, int index);
 double luaL_checknumber(void* L, int index);
+#define lua_getglobal(L, name) (lua_pushstring(L, name), lua_gettable(L, LUA_GLOBALSINDEX))
+int lua_pcall(void* L, int nArgs, int nResults, int errFunction);
 
 
 
@@ -265,3 +267,9 @@ void vanilla1121_unitDisable(uint32_t unit);
 void vanilla1121_unitEnable(uint32_t unit);
 uint32_t vanilla1121_gxDevice();
 void* vanilla1121_d3dDevice(uint32_t gxDevice);
+// To execute Lua within AddOns. Contributed by MarcelineVQ
+void vanilla1121_luaBegin(uint32_t& savingPreviousExecutionStateTo, const uint32_t beginningExecutionState);
+// To execute Lua within AddOns. Contributed by MarcelineVQ
+void vanilla1121_luaEnd(const uint32_t savedExecutionStateToRestore);
+// The current AddOn executionState. Contributed by MarcelineVQ
+uint32_t vanilla1121_luaExecutionState();

@@ -1,4 +1,4 @@
-#ifndef CPPTIME_H_
+﻿#ifndef CPPTIME_H_
 #define CPPTIME_H_
 
 /** This file is modified from https://github.com/eglimi/cpptime
@@ -47,6 +47,7 @@
 #include <string>
 #include <atomic>
 #include <sstream>
+#include <tuple>
 
 #include "Vanilla1121_functions.h"
 #include "utf8_to_utf16.h"
@@ -73,6 +74,7 @@ namespace CppTime
             duration period;
             handler_t handler;
             bool valid;
+            uint32_t luaExecutionState;
         };
 
         // A time event structure that holds the next timeout and a reference to its
@@ -107,7 +109,7 @@ namespace CppTime
         // Sorted queue that has the next timeout at its top.
         std::multiset<detail::Time_event> time_events;
         // FIFO queue for execution
-        std::deque< std::pair<CppTime::timer_id, std::string> > execution_fifo;
+        std::deque< std::tuple<CppTime::timer_id, std::string, uint32_t> > execution_fifo;
         // A hash list for quick check if a timer is already in queue
         std::unordered_set<CppTime::timer_id> already_in_fifo;
 
@@ -181,7 +183,7 @@ namespace CppTime
             }
 
             timer_id id = next_id++; // I think we won't use up uint32_t
-            detail::Event e{ id, when, period, handler, true };
+            detail::Event e{ id, when, period, handler, true, vanilla1121_luaExecutionState() };
             events.insert({ id,e });
             time_events.insert(detail::Time_event{ when, id });
             lock.unlock();
@@ -271,14 +273,27 @@ namespace CppTime
                 void* L = GetContext();
                 while (!done && threadIsRunning && clock::now() - start <= timeslice && execution_fifo.size() > 0)
                 {
-                    // We do a copy here, because execution_fifo would pop_front() soon. Reference is error-prone.
-                    auto i = execution_fifo.front();
+                    const auto& [ref, handler, luaExecutionState] = execution_fifo.front();
 
-                    std::stringstream ss{};
-                    ss << i.second << "(" << i.first << ");";
-                    vanilla1121_runScript(ss.str());
+                    uint32_t previousState{ 0 };
+                    vanilla1121_luaBegin(previousState, luaExecutionState);
+                    {
+                        lua_getglobal(L, handler);
+                        if (lua_type(L, -1) == LUA_TFUNCTION) {
+                            lua_pushnumber(L, ref);
+                            if (lua_pcall(L, 1, 0, 0) != 0) {
+                                // ignoring error
+                                lua_pop(L, 1);
+                            }
+                        }
+                        else {
+                            // handler is not found/not a function
+                            lua_pop(L, 1);
+                        }
+                    }
+                    vanilla1121_luaEnd(previousState);
 
-                    already_in_fifo.erase(i.first);
+                    already_in_fifo.erase(ref);
                     execution_fifo.pop_front();
                 }
                 trigger.unlock();
@@ -305,8 +320,9 @@ namespace CppTime
                         // Remove time event
                         time_events.erase(time_events.begin());
 
-                        // Copy the handler before releasing the lock
+                        // Copy the handler and executionState before releasing the lock
                         handler_t handler{ events.at(te.ref).handler };
+                        uint32_t luaExecutionState{ events.at(te.ref).luaExecutionState };
 
                         lock.unlock();
                         {
@@ -315,7 +331,7 @@ namespace CppTime
                             // Add to execution queue
                             // We only accept 1 callback per timer, discard the rest.
                             if (already_in_fifo.insert(te.ref).second == true) {
-                                execution_fifo.push_back({ te.ref, handler });
+                                execution_fifo.push_back({ te.ref, handler, luaExecutionState });
                             }
                         }
                         lock.lock();
