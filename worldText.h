@@ -15,11 +15,11 @@ namespace worldText {
 
     class Floating {
     public:
-        Floating(std::string text, uint64_t stickToGUID, int r, int g, int b, int a, FLOATING_DIRECTION direction, ID3DXFont* font, bool serif, LPDIRECT3DDEVICE9 device);
+        Floating(std::string text, uint64_t stickToGUID, int r, int g, int b, int a, FLOATING_DIRECTION direction, ID3DXFont* font, ID3DXSprite* sprite, bool serif, LPDIRECT3DDEVICE9 device);
 
         // Return 1 = draw; 0 = invisible; -1 = end
         // As device might be lost during animation, we would update it
-        int update(ID3DXFont* font, LPDIRECT3DDEVICE9 device);
+        int update(ID3DXFont* font, ID3DXSprite* sprite, LPDIRECT3DDEVICE9 device);
         void draw();
         void fastForward(int ffDistance);
 
@@ -35,6 +35,7 @@ namespace worldText {
         int m_a;
         LPDIRECT3DDEVICE9 m_device;
         ID3DXFont* m_font;
+        ID3DXSprite* m_sprite;
         LARGE_INTEGER m_startTime;
         int m_width;
         int m_height;
@@ -59,11 +60,11 @@ namespace worldText {
 
     class Crit {
     public:
-        Crit(std::string text, uint64_t stickToGUID, int r, int g, int b, int a, ID3DXFont* fontNormal, ID3DXFont* fontBig, ID3DXFont* fontHuge, bool serif, LPDIRECT3DDEVICE9 device);
+        Crit(std::string text, uint64_t stickToGUID, int r, int g, int b, int a, ID3DXFont* fontNormal, ID3DXFont* fontBig, ID3DXFont* fontHuge, ID3DXSprite* sprite, bool serif, LPDIRECT3DDEVICE9 device);
 
         // Return 1 = draw; 0 = invisible; -1 = end
         // As device might be lost during animation, we would update it
-        int update(ID3DXFont* fontNormal, ID3DXFont* fontBig, ID3DXFont* fontHuge, LPDIRECT3DDEVICE9 device);
+        int update(ID3DXFont* fontNormal, ID3DXFont* fontBig, ID3DXFont* fontHuge, ID3DXSprite* sprite, LPDIRECT3DDEVICE9 device);
 
         void draw();
 
@@ -86,6 +87,7 @@ namespace worldText {
         ID3DXFont* m_fontHuge;
         ID3DXFont* m_fontDraw;
         LPDIRECT3DDEVICE9 m_device;
+        ID3DXSprite* m_sprite;
         LARGE_INTEGER m_startTime;
         LARGE_INTEGER m_timingPrecision;
         double m_totalTime;

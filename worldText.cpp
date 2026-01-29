@@ -15,7 +15,7 @@ const int worldText::animationFPS = 180;
 uint64_t worldText::Floating::m_instanceCount = 0;
 double worldText::nameplateHeight = 55.0f;
 
-worldText::Floating::Floating(std::string text, uint64_t stickToGUID, int r, int g, int b, int a, FLOATING_DIRECTION direction, ID3DXFont* font, bool serif, LPDIRECT3DDEVICE9 device) {
+worldText::Floating::Floating(std::string text, uint64_t stickToGUID, int r, int g, int b, int a, FLOATING_DIRECTION direction, ID3DXFont* font, ID3DXSprite* sprite, bool serif, LPDIRECT3DDEVICE9 device) {
     m_text = text;
     m_stickToGUID = stickToGUID;
     m_playerGUID = UnitGUID("player");
@@ -59,12 +59,13 @@ worldText::Floating::Floating(std::string text, uint64_t stickToGUID, int r, int
         m_floatingDistance = static_cast<int>(m_floatingDistance * 1.5);
     }
 
-    update(font, device);
+    update(font, sprite, device);
 }
 
-int worldText::Floating::update(ID3DXFont* font, LPDIRECT3DDEVICE9 device) {
+int worldText::Floating::update(ID3DXFont* font, ID3DXSprite* sprite, LPDIRECT3DDEVICE9 device) {
     m_font = font;
     m_device = device;
+    m_sprite = sprite;
 
     LARGE_INTEGER now = {};
     QueryPerformanceCounter(&now);
@@ -165,15 +166,15 @@ void worldText::Floating::draw() {
         shadowRect.bottom -= m_shadowWeight;
     }
 
-    m_font->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &shadowRect, DT_LEFT, D3DCOLOR_ARGB(static_cast<int>(200 * m_alpha), 0, 0, 0));
-    m_font->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &m_rect, DT_LEFT, D3DCOLOR_ARGB(static_cast<int>(m_a * m_alpha), m_r, m_g, m_b));
+    m_font->DrawTextW(m_sprite, utf8_to_utf16(m_text).c_str(), -1, &shadowRect, DT_LEFT, D3DCOLOR_ARGB(static_cast<int>(200 * m_alpha), 0, 0, 0));
+    m_font->DrawTextW(m_sprite, utf8_to_utf16(m_text).c_str(), -1, &m_rect, DT_LEFT, D3DCOLOR_ARGB(static_cast<int>(m_a * m_alpha), m_r, m_g, m_b));
 }
 
 void worldText::Floating::fastForward(int ffDistance) {
     m_startTime.QuadPart -= static_cast<LONGLONG>((static_cast<double>(ffDistance) / static_cast<double>(m_floatingDistance)) * m_totalTime * animationFPS) * m_timingPrecision.QuadPart;
 }
 
-worldText::Crit::Crit(std::string text, uint64_t stickToGUID, int r, int g, int b, int a, ID3DXFont* fontNormal, ID3DXFont* fontBig, ID3DXFont* fontHuge, bool serif, LPDIRECT3DDEVICE9 device) {
+worldText::Crit::Crit(std::string text, uint64_t stickToGUID, int r, int g, int b, int a, ID3DXFont* fontNormal, ID3DXFont* fontBig, ID3DXFont* fontHuge, ID3DXSprite* sprite, bool serif, LPDIRECT3DDEVICE9 device) {
     m_text = text;
     m_serif = serif;
     m_stickToGUID = stickToGUID;
@@ -216,14 +217,15 @@ worldText::Crit::Crit(std::string text, uint64_t stickToGUID, int r, int g, int 
         m_floatingDistance = static_cast<int>(m_floatingDistance * 1.5);
     }
 
-    update(fontNormal, fontBig, fontHuge, device);
+    update(fontNormal, fontBig, fontHuge, sprite, device);
 }
 
-int worldText::Crit::update(ID3DXFont* fontNormal, ID3DXFont* fontBig, ID3DXFont* fontHuge, LPDIRECT3DDEVICE9 device) {
+int worldText::Crit::update(ID3DXFont* fontNormal, ID3DXFont* fontBig, ID3DXFont* fontHuge, ID3DXSprite* sprite, LPDIRECT3DDEVICE9 device) {
     m_fontNormal = fontNormal;
     m_fontBig = fontBig;
     m_fontHuge = fontHuge;
     m_device = device;
+    m_sprite = sprite;
 
     LARGE_INTEGER now = {};
     QueryPerformanceCounter(&now);
@@ -320,10 +322,10 @@ void worldText::Crit::draw() {
         shadowRect.bottom -= m_shadowWeight;
     }
 
-    m_fontDraw->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &shadowRect, DT_LEFT, D3DCOLOR_ARGB(static_cast<int>(200 * m_alpha), 0, 0, 0));
-    m_fontDraw->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &m_rect, DT_LEFT, D3DCOLOR_ARGB(static_cast<int>(m_a * m_alpha), m_r, m_g, m_b));
+    m_fontDraw->DrawTextW(m_sprite, utf8_to_utf16(m_text).c_str(), -1, &shadowRect, DT_LEFT, D3DCOLOR_ARGB(static_cast<int>(200 * m_alpha), 0, 0, 0));
+    m_fontDraw->DrawTextW(m_sprite, utf8_to_utf16(m_text).c_str(), -1, &m_rect, DT_LEFT, D3DCOLOR_ARGB(static_cast<int>(m_a * m_alpha), m_r, m_g, m_b));
 
     if (m_alpha_forHugeFont > 0.0) {
-        m_fontHuge->DrawTextW(NULL, utf8_to_utf16(m_text).c_str(), -1, &shadowRect, DT_LEFT, D3DCOLOR_ARGB(static_cast<int>(m_a * m_alpha_forHugeFont), m_r, m_g, m_b));
+        m_fontHuge->DrawTextW(m_sprite, utf8_to_utf16(m_text).c_str(), -1, &shadowRect, DT_LEFT, D3DCOLOR_ARGB(static_cast<int>(m_a * m_alpha_forHugeFont), m_r, m_g, m_b));
     }
 }

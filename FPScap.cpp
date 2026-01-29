@@ -37,12 +37,14 @@ void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
     if (inForeground) {
         if (targetFrameInterval.QuadPart < 1) {
             p_original_GxScenePresent_0x58a960(unknown);
-            if (scene_needReloadFont) {
-                LPDIRECT3DDEVICE9 gDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(vanilla1121_d3dDevice(vanilla1121_gxDevice()));
-                if (scene_lastDXdevice != NULL
-                    && scene_lastDXdevice == gDevice
-                    && scene_lastDXdevice->TestCooperativeLevel() == D3D_OK
-                    && scene_fontsOnLost == false) {
+            LPDIRECT3DDEVICE9 gDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(vanilla1121_d3dDevice(vanilla1121_gxDevice()));
+            if (scene_lastDXdevice != NULL
+                && scene_lastDXdevice == gDevice
+                && scene_lastDXdevice->TestCooperativeLevel() == D3D_OK) {
+                if (scene_needRebuildSprite && scene_spriteOnLost == false) {
+                    scene_rebuildSprite();
+                }
+                if (scene_needReloadFont && scene_fontsOnLost == false) {
                     scene_reloadFont();
                 }
             }
@@ -52,12 +54,14 @@ void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
     else {
         if (backgroundFrameInterval.QuadPart < 1) {
             p_original_GxScenePresent_0x58a960(unknown);
-            if (scene_needReloadFont) {
-                LPDIRECT3DDEVICE9 gDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(vanilla1121_d3dDevice(vanilla1121_gxDevice()));
-                if (scene_lastDXdevice != NULL
-                    && scene_lastDXdevice == gDevice
-                    && scene_lastDXdevice->TestCooperativeLevel() == D3D_OK
-                    && scene_fontsOnLost == false) {
+            LPDIRECT3DDEVICE9 gDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(vanilla1121_d3dDevice(vanilla1121_gxDevice()));
+            if (scene_lastDXdevice != NULL
+                && scene_lastDXdevice == gDevice
+                && scene_lastDXdevice->TestCooperativeLevel() == D3D_OK) {
+                if (scene_needRebuildSprite && scene_spriteOnLost == false) {
+                    scene_rebuildSprite();
+                }
+                if (scene_needReloadFont && scene_fontsOnLost == false) {
                     scene_reloadFont();
                 }
             }
@@ -116,12 +120,14 @@ void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
             : now.QuadPart + backgroundFrameInterval.QuadPart;
     }
 
-    if (scene_needReloadFont) {
-        LPDIRECT3DDEVICE9 gDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(vanilla1121_d3dDevice(vanilla1121_gxDevice()));
-        if (scene_lastDXdevice != NULL
-            && scene_lastDXdevice == gDevice
-            && scene_lastDXdevice->TestCooperativeLevel() == D3D_OK
-            && scene_fontsOnLost == false) {
+    LPDIRECT3DDEVICE9 gDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(vanilla1121_d3dDevice(vanilla1121_gxDevice()));
+    if (scene_lastDXdevice != NULL
+        && scene_lastDXdevice == gDevice
+        && scene_lastDXdevice->TestCooperativeLevel() == D3D_OK) {
+        if (scene_needRebuildSprite && scene_spriteOnLost == false) {
+            scene_rebuildSprite();
+        }
+        if (scene_needReloadFont && scene_fontsOnLost == false) {
             scene_reloadFont();
         }
     }

@@ -8,7 +8,7 @@
 
 #include "worldText.h"
 
-typedef HRESULT(WINAPI* LPD3DXCREATEFFONTW)(
+typedef HRESULT(WINAPI* D3DXCREATEFFONTW)(
     LPDIRECT3DDEVICE9       pDevice,
     INT                     Height,
     UINT                    Width,
@@ -21,7 +21,12 @@ typedef HRESULT(WINAPI* LPD3DXCREATEFFONTW)(
     DWORD                   PitchAndFamily,
     LPCWSTR                 pFaceName,
     LPD3DXFONT* ppFont);
-extern LPD3DXCREATEFFONTW p_D3DXCreateFontW;
+typedef HRESULT(WINAPI* D3DXCREATESPRITE)(
+    LPDIRECT3DDEVICE9   pDevice,
+    LPD3DXSPRITE* ppSprite);
+
+extern D3DXCREATEFFONTW pD3DXCreateFontW;
+extern D3DXCREATESPRITE pD3DXCreateSprite;
 extern bool scene_isEnabled;
 extern bool scene_useXP3combatText;
 extern bool scene_hideEXPtext;
@@ -31,9 +36,12 @@ extern std::string scene_userSelectedFontName;
 // It seems d3d9 would crash if call reloadFont() between BeginScene() and EndScene(), so here is a bool switch to delay reloadFont() till Present() is done.
 extern bool scene_needReloadFont;
 extern bool scene_fontsOnLost;
+extern bool scene_needRebuildSprite;
+extern bool scene_spriteOnLost;
 void scene_init();
 void scene_end();
 bool scene_reloadFont();
+bool scene_rebuildSprite();
 void scene_addSmallFloatingText(std::string text, int r, int g, int b, int a, worldText::FLOATING_DIRECTION direction);
 void scene_addCritText(std::string text, int r, int g, int b, int a);
 std::string scene_debugText();
