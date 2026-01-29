@@ -3,7 +3,6 @@
 #include <cmath>
 #include <map>
 #include <tuple>
-#include <new>
 
 #include <intrin.h>
 
@@ -543,15 +542,4 @@ uint16_t __fastcall detoured_fun_0x7c29f0(float* ray_data, uint32_t vertex_base,
     }
 
     return 1;
-}
-
-SMEMALLOC_PEPOPO p_SMemAlloc = reinterpret_cast<SMEMALLOC_PEPOPO>(0x6462e0);
-SMEMALLOC_PEPOPO p_original_SMemAlloc = NULL;
-void* __stdcall detoured_SMemAlloc(uint32_t size, char* sourcePath, DWORD unknown, uint8_t clearToZero) {
-    // We try to allocate at least a cache line of memory
-    // The math is from Google Gemini. The std::hardware_destructive_interference_size must be a power of 2 which should be true on modern CPUs.
-    // This is inspired by https://github.com/doitsujin/dxvk/commit/9d5dd98ac79e28ca975abbba64931e1c2ae3a798
-    const uint32_t additionalPadding = 8u;
-    uint32_t alignedSize = (size + additionalPadding + std::hardware_destructive_interference_size - 1u) & ~(std::hardware_destructive_interference_size - 1u);
-    return p_original_SMemAlloc(size, sourcePath, unknown, clearToZero);
 }

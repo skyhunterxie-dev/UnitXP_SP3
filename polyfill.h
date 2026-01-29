@@ -139,8 +139,3 @@ typedef uint16_t(__fastcall* FUNTYPE_0x7c29f0)(float*, uint32_t, uint16_t*, floa
 extern FUNTYPE_0x7c29f0 p_fun_0x7c29f0;
 extern FUNTYPE_0x7c29f0 p_original_fun_0x7c29f0;
 uint16_t __fastcall detoured_fun_0x7c29f0(float* ray_data, uint32_t vertex_base, uint16_t* indices, float* out_distance, float* out_uv, float tolerance);
-
-typedef void* (__stdcall* SMEMALLOC_PEPOPO)(uint32_t size, char* sourcePath, DWORD unknown, uint8_t clearToZero);
-extern SMEMALLOC_PEPOPO p_SMemAlloc;
-extern SMEMALLOC_PEPOPO p_original_SMemAlloc;
-void* __stdcall detoured_SMemAlloc(uint32_t size, char* sourcePath, DWORD unknown, uint8_t clearToZero);

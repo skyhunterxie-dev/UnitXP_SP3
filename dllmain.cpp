@@ -784,10 +784,6 @@ BOOL APIENTRY DllMain(HMODULE hModule,
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for afterD3Dreset function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
         }
-        if (MH_CreateHook(p_SMemAlloc, &detoured_SMemAlloc, reinterpret_cast<LPVOID*>(&p_original_SMemAlloc)) != MH_OK) {
-            MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for SMemAlloc function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-            return FALSE;
-        }
         if (MH_EnableHook(MH_ALL_HOOKS) != MH_OK) {
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed when enabling hooks.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
@@ -802,10 +798,6 @@ BOOL APIENTRY DllMain(HMODULE hModule,
         if (lpReserved == NULL) {
             if (MH_DisableHook(MH_ALL_HOOKS) != MH_OK) {
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to disable hooks. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-                return FALSE;
-            }
-            if (MH_RemoveHook(p_SMemAlloc) != MH_OK) {
-                MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for SMemAlloc function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
             }
             if (MH_RemoveHook(p_afterD3Dreset) != MH_OK) {
