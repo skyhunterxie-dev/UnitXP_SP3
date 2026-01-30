@@ -261,7 +261,7 @@ namespace CppTime
             }
 
             auto start = clock::now();
-            if (trigger.try_lock_for(std::chrono::milliseconds(1)))
+            if (trigger.try_lock_for(std::chrono::milliseconds(2)))
             {
                 if (done || threadIsRunning == false)
                 {
@@ -270,7 +270,7 @@ namespace CppTime
                 }
 
                 void* L = GetContext();
-                while (!done && threadIsRunning && (clock::now() - start <= std::chrono::milliseconds(2)) && (execution_fifo.size() > 0))
+                while (!done && threadIsRunning && (clock::now() - start <= std::chrono::milliseconds(1)) && (execution_fifo.size() > 0))
                 {
                     const auto& [ref, handler, luaExecutionState] = execution_fifo.front();
 

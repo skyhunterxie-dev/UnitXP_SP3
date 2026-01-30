@@ -29,7 +29,7 @@ static int fpsMethod = 0; // 1 for NtDelayExecution()
 static LARGE_INTEGER fpsSpinning = {};
 static LARGE_INTEGER fpsResolutionUnit = {}; // Same as timerPrecision but in CPU ticks.
 static MMRESULT timerPrecisionSet = TIMERR_NOCANDO;
-static const UINT timerPrecision = 2u;
+static const UINT timerPrecision = 1u;
 
 void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
     bool inForeground = vanilla1121_gameInForeground();
