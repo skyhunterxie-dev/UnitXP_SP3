@@ -36,6 +36,12 @@ static std::string scene_disableReason{};
 // https://codeberg.org/konaka/UnitXP_SP3/issues/13 reports this solution works
 static int scene_delayDetouredSceneEnd = 2;
 
+// There is one player reporting even with Gemini's delaying render, the game still froze on loading screen on Windows 10 22H2 with DirectX 9
+// His loading progress bar was stuck at a quite early stage ( less than 25% )
+// We try delaying until PLAYER_ENTERING_WORLD
+int scene_inWorld = 0;
+bool scene_needUnload = false;
+
 LPDIRECT3DDEVICE9 scene_lastDXdevice = NULL;
 bool scene_needReloadFont = false;
 bool scene_fontsOnLost = false;
@@ -118,7 +124,7 @@ static bool scene_spriteOnResetDevice() {
     return true;
 }
 
-static void scene_unloadSprite() {
+void scene_unloadSprite() {
     if (scene_sprite != NULL) {
         scene_sprite->Release();
         scene_sprite = NULL;
@@ -133,8 +139,6 @@ bool scene_rebuildSprite() {
         scene_unloadSprite();
     }
 
-    scene_delayDetouredSceneEnd = 2;
-
     {
         if (scene_sprite == NULL) {
             if (false == SUCCEEDED(pD3DXCreateSprite(scene_lastDXdevice, &scene_sprite))) {
@@ -145,6 +149,7 @@ bool scene_rebuildSprite() {
         }
     }
 
+    scene_delayDetouredSceneEnd = 2;
     scene_needRebuildSprite = false;
     return true;
 }
@@ -225,7 +230,7 @@ static bool scene_fontsOnResetDevice() {
     return true;
 }
 
-static void scene_unloadFonts() {
+void scene_unloadFonts() {
     if (scene_fallback != NULL) {
         scene_fallback->Release();
         scene_fallback = NULL;
@@ -273,8 +278,6 @@ bool scene_reloadFont() {
     else {
         scene_unloadFonts();
     }
-
-    scene_delayDetouredSceneEnd = 2;
 
     {
         if (scene_fallback == NULL) {
@@ -364,7 +367,7 @@ bool scene_reloadFont() {
             scene_fontPreload(scene_selectedHUGE);
         }
     }
-
+    scene_delayDetouredSceneEnd = 2;
     scene_needReloadFont = false;
     return true;
 }
@@ -374,27 +377,26 @@ bool scene_reloadFont() {
 ISCENEBEGIN p_sceneBegin = reinterpret_cast<ISCENEBEGIN>(0x5a1680);
 ISCENEBEGIN p_original_sceneBegin = NULL;
 void __fastcall detoured_sceneBegin(uint32_t CGxDevice, void* ignored, uint32_t unknown) {
+    if (scene_inWorld != 1) {
+        p_original_sceneBegin(CGxDevice, unknown);
+        return;
+    }
+
     if (scene_isEnabled == false) {
         p_original_sceneBegin(CGxDevice, unknown);
         return;
     }
 
     if (scene_checkIfD3D == false) {
-        char* tempBuffer = new(std::nothrow) char[64];
-        if (tempBuffer == nullptr) {
-            p_original_sceneBegin(CGxDevice, unknown);
-            return;
-        }
+        static char tempBuffer[64] = {};
 
         int len = GetClassNameA(vanilla1121_gameWindow(), tempBuffer, 64);
         if (len == 0) {
-            delete[] tempBuffer;
             p_original_sceneBegin(CGxDevice, unknown);
             return;
         }
 
         std::string currentAPI{ tempBuffer };
-        delete[] tempBuffer;
         
         if (currentAPI.find(u8"D3d") == std::string::npos) {
             scene_isEnabled = false;
@@ -440,6 +442,10 @@ void __fastcall detoured_sceneBegin(uint32_t CGxDevice, void* ignored, uint32_t 
 AFTERD3DRESET p_afterD3Dreset = reinterpret_cast<AFTERD3DRESET>(0x5a24a0);
 AFTERD3DRESET p_original_afterD3Dreset = NULL;
 void __fastcall detoured_afterD3Dreset(uint32_t CGxDevice, void* ignored) {
+    if (scene_inWorld != 1) {
+        p_original_afterD3Dreset(CGxDevice);
+        return;
+    }
     if (scene_attemptFontsReset) {
         if (scene_spriteOnLost) {
             scene_spriteOnResetDevice();
@@ -455,11 +461,14 @@ void __fastcall detoured_afterD3Dreset(uint32_t CGxDevice, void* ignored) {
 ISCENEEND p_sceneEnd = reinterpret_cast<ISCENEEND>(0x5a17a0);
 ISCENEEND p_original_sceneEnd = NULL;
 void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
+    if (scene_inWorld != 1) {
+        p_original_sceneEnd(CGxDevice);
+        return;
+    }
+
     if (scene_delayDetouredSceneEnd <= 0
         && *reinterpret_cast<uint32_t*>(CGxDevice + 0x3a38) != NULL
-        && scene_isEnabled == true
-        && scene_spriteOnLost == false && scene_needRebuildSprite == false
-        && scene_fontsOnLost == false && scene_needReloadFont == false) {
+        && scene_isEnabled == true) {
         LPDIRECT3DDEVICE9 dxDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(vanilla1121_d3dDevice(CGxDevice));
         if (dxDevice == NULL || (reinterpret_cast<uintptr_t>(dxDevice) & 1) != 0) {
             p_original_sceneEnd(CGxDevice);
@@ -479,9 +488,19 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
             return;
         }
 
+        if (scene_spriteOnLost || scene_needRebuildSprite) {
+            p_original_sceneEnd(CGxDevice);
+            return;
+        }
+
         if (scene_fallback == NULL || scene_fallbackBIG == NULL || scene_fallbackSmall == NULL || scene_fallbackHUGE == NULL
             || scene_selected == NULL || scene_selectedBIG == NULL || scene_selectedSmall == NULL || scene_selectedHUGE == NULL) {
             scene_needReloadFont = true;
+            p_original_sceneEnd(CGxDevice);
+            return;
+        }
+
+        if (scene_fontsOnLost || scene_needReloadFont) {
             p_original_sceneEnd(CGxDevice);
             return;
         }
@@ -643,6 +662,11 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
         return;
     }
 
+    if (scene_inWorld != 1) {
+        p_original_createWorldText(self, type, text, color, unknown);
+        return;
+    }
+
     if (false == scene_useXP3combatText) {
         p_original_createWorldText(self, type, text, color, unknown);
         return;
@@ -653,7 +677,7 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
         return;
     }
 
-    if (scene_lastDXdevice == NULL || scene_fallback == NULL || scene_fallbackBIG == NULL || scene_fallbackHUGE == NULL || scene_fallbackSmall == NULL
+    if (scene_lastDXdevice == NULL || scene_sprite == NULL || scene_fallback == NULL || scene_fallbackBIG == NULL || scene_fallbackHUGE == NULL || scene_fallbackSmall == NULL
         || scene_selected == NULL || scene_selectedBIG == NULL || scene_selectedHUGE == NULL || scene_selectedSmall == NULL) {
         p_original_createWorldText(self, type, text, color, unknown);
         return;
@@ -744,10 +768,13 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
 }
 
 void scene_addSmallFloatingText(std::string text, int r, int g, int b, int a, worldText::FLOATING_DIRECTION direction) {
+    if (scene_inWorld != 1) {
+        return;
+    }
     if (scene_isEnabled == false) {
         return;
     }
-    if (scene_lastDXdevice == NULL || scene_fallback == NULL || scene_fallbackBIG == NULL || scene_fallbackHUGE == NULL || scene_fallbackSmall == NULL
+    if (scene_lastDXdevice == NULL || scene_sprite == NULL || scene_fallback == NULL || scene_fallbackBIG == NULL || scene_fallbackHUGE == NULL || scene_fallbackSmall == NULL
         || scene_selected == NULL || scene_selectedBIG == NULL || scene_selectedHUGE == NULL || scene_selectedSmall == NULL) {
         return;
     }
@@ -764,10 +791,13 @@ void scene_addSmallFloatingText(std::string text, int r, int g, int b, int a, wo
 }
 
 void scene_addCritText(std::string text, int r, int g, int b, int a) {
+    if (scene_inWorld != 1) {
+        return;
+    }
     if (scene_isEnabled == false) {
         return;
     }
-    if (scene_lastDXdevice == NULL || scene_fallback == NULL || scene_fallbackBIG == NULL || scene_fallbackHUGE == NULL || scene_fallbackSmall == NULL
+    if (scene_lastDXdevice == NULL || scene_sprite == NULL || scene_fallback == NULL || scene_fallbackBIG == NULL || scene_fallbackHUGE == NULL || scene_fallbackSmall == NULL
         || scene_selected == NULL || scene_selectedBIG == NULL || scene_selectedHUGE == NULL || scene_selectedSmall == NULL) {
         return;
     }
@@ -796,6 +826,15 @@ void scene_addCritText(std::string text, int r, int g, int b, int a) {
     critTexts.insert({ player, newCrit });
 }
 
+void scene_onPlayerEnteringWorld() {
+    scene_inWorld = 1;
+}
+
+void scene_onPlayerLeavingWorld() {
+    scene_inWorld = 0;
+    scene_needUnload = true;
+}
+
 std::string scene_debugText() {
     std::stringstream ss{};
 
@@ -805,6 +844,14 @@ std::string scene_debugText() {
             ss << std::endl << i.second;
         }
     }
+
+    if (scene_inWorld != 1) {
+        ss << "Player is not in world (" << scene_inWorld << ")" << std::endl;
+    }
+
+    LPDIRECT3DDEVICE9 gDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(vanilla1121_d3dDevice(vanilla1121_gxDevice()));
+
+    ss << "Fonts and Sprite state: " << reinterpret_cast<uint32_t>(gDevice) << "=" << reinterpret_cast<uint32_t>(scene_lastDXdevice) << " " << scene_spriteOnLost << " " << scene_needRebuildSprite << " " << scene_fontsOnLost << " " << scene_needReloadFont << " " << scene_delayDetouredSceneEnd << std::endl;
 
     if (scene_disableReason.length() > 0) {
         ss << scene_disableReason << std::endl;

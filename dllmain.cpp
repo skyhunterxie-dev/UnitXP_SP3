@@ -32,6 +32,7 @@
 #include "weather.h"
 #include "polyfill.h"
 #include "sceneBegin_sceneEnd.h"
+#include "gameEvent.h"
 
 using namespace std;
 
@@ -127,6 +128,21 @@ int __fastcall detoured_UnitXP(void* L) {
                 lua_pushnil(L);
                 return 1;
             }
+        }
+        else if (cmd == "onEvent") {
+            string subcmd{ lua_tostring(L, 2) };
+            if (subcmd == "PLAYER_ENTERING_WORLD") {
+                onPlayerEnteringWorld();
+                lua_pushboolean(L, true);
+                return 1;
+            }
+            if (subcmd == "PLAYER_LEAVING_WORLD") {
+                onPlayerLeavingWorld();
+                lua_pushboolean(L, true);
+                return 1;
+            }
+            lua_pushnil(L);
+            return 1;
         }
         else if (cmd == "target") {
             string subcmd{ lua_tostring(L, 2) };

@@ -38,13 +38,20 @@ extern bool scene_needReloadFont;
 extern bool scene_fontsOnLost;
 extern bool scene_needRebuildSprite;
 extern bool scene_spriteOnLost;
+extern bool scene_needUnload;
+extern int scene_inWorld;
 void scene_init();
 void scene_end();
+void scene_unloadFonts();
+void scene_unloadSprite();
 bool scene_reloadFont();
 bool scene_rebuildSprite();
 void scene_addSmallFloatingText(std::string text, int r, int g, int b, int a, worldText::FLOATING_DIRECTION direction);
 void scene_addCritText(std::string text, int r, int g, int b, int a);
 std::string scene_debugText();
+
+void scene_onPlayerEnteringWorld();
+void scene_onPlayerLeavingWorld();
 
 // The technique of hooking __thiscall function is from: https://tresp4sser.wordpress.com/2012/10/06/how-to-hook-thiscall-functions/
 // -- Pointer is __thiscall with 1st param being THIS
