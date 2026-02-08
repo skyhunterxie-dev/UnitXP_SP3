@@ -16,7 +16,8 @@
 CTGAFILE_WRITE_0x5a4810 p_CTgaFile_Write_0x5a4810 = reinterpret_cast<CTGAFILE_WRITE_0x5a4810>(0x5a4810);
 CTGAFILE_WRITE_0x5a4810 p_original_CTgaFile_Write_0x5a4810 = NULL;
 
-SCREENSHOT_FILETYPE screenshot_filetype = SCREENSHOT_FILETYPE::jpg;
+SCREENSHOT_FILETYPE screenshot_filetype = SCREENSHOT_FILETYPE::png;
+bool screenshot_enabled = true;
 
 struct PendingScreenshot {
     uint8_t* buffer;
@@ -96,6 +97,10 @@ static void screenshot_worker() {
 }
 
 int __fastcall detoured_CTgaFile_Write_0x5a4810(uint32_t self, void* ignored, char* TGAfilename) {
+    if (!screenshot_enabled) {
+        return p_original_CTgaFile_Write_0x5a4810(self, TGAfilename);
+    }
+
     uint8_t additionalHeaderLength = *reinterpret_cast<uint8_t*>(self + 0x8);
     uint8_t colorMapType = *reinterpret_cast<uint8_t*>(self + 0x9);
     uint8_t imageType = *reinterpret_cast<uint8_t*>(self + 0xa);
