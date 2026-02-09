@@ -3,7 +3,8 @@
 #include <sstream>
 #include <unordered_map>
 #include <cstdint>
-#include <profileapi.h>
+
+#include <Windows.h>
 
 #include "performanceProfiling.h"
 #include "coffTimeDateStamp.h"

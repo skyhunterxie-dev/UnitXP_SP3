@@ -78,6 +78,8 @@ static auto p_getCamera = reinterpret_cast<GETACTIVECAMERA>(0x4818F0);
 
 const float cameraIntersectBlur = 0.01f;
 
+std::mt19937 rnd(std::random_device{}());
+
 // To get lua_State pointer
 void* GetContext(void) {
     void* result = p_GetContext();

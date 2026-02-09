@@ -25,11 +25,7 @@ float behind_threshold = static_cast<float>(M_PI_2);
 static unordered_map<uint64_t, pair<LARGE_INTEGER, int>> cameraSightCache{};
 static map<pair<uint64_t, uint64_t>, pair<LARGE_INTEGER, int>> unitSightCache{};
 static LARGE_INTEGER cacheTTL = {};
-static random_device rDev{};
-static mt19937 rnd(rDev());
-static uniform_int_distribution<mt19937::result_type> rDist(0, 60);
 static LARGE_INTEGER ditcherUnit = {};
-
 
 // Use a dither to make cache expires more fluently
 static LARGE_INTEGER cacheDither() {
@@ -37,6 +33,7 @@ static LARGE_INTEGER cacheDither() {
         ditcherUnit.QuadPart = getPerformanceCounterFrequency().QuadPart / 1000;
     }
 
+    static uniform_int_distribution<int> rDist(0, 60);
     LARGE_INTEGER result = {};
     result.QuadPart = ditcherUnit.QuadPart * static_cast<int64_t>(rDist(rnd));
 

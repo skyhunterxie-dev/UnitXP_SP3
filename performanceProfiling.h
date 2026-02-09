@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
-#include <profileapi.h>
+#include <Windows.h>
 
 void perfMarkStart(int perfPoint);
 void perfMarkEnd(int perfPoint);

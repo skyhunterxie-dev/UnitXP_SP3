@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <string>
+#include <random>
 
 typedef int(__fastcall* LUA_CFUNCTION)(void* L);
 
@@ -155,8 +156,6 @@ double luaL_checknumber(void* L, int index);
 int lua_pcall(void* L, int nArgs, int nResults, int errFunction);
 
 
-
-
 // WoW C function
 // Get GUID from UnitID
 uint64_t UnitGUID(const char* unitID);
@@ -273,3 +272,4 @@ void vanilla1121_luaBegin(uint32_t& savingPreviousExecutionStateTo, const uint32
 void vanilla1121_luaEnd(const uint32_t savedExecutionStateToRestore);
 // The current AddOn executionState. Contributed by MarcelineVQ
 uint32_t vanilla1121_luaExecutionState();
+extern std::mt19937 rnd;
