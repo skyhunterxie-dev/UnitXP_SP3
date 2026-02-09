@@ -17,3 +17,4 @@ enum SCREENSHOT_FILETYPE {
 };
 
 extern SCREENSHOT_FILETYPE screenshot_filetype;
+extern bool screenshot_enabled;

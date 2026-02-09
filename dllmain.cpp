@@ -595,14 +595,21 @@ int __fastcall detoured_UnitXP(void* L) {
         } 
         else if (cmd == "screenshot") {
             string subcmd{ lua_tostring(L,2) };
-            if (subcmd == "perfect") {
+            if (subcmd == "enable") {
+                screenshot_enabled = true;
+            }
+            else if (subcmd == "disable") {
+                screenshot_enabled = false;
+            }
+            else if (subcmd == "png") {
                 screenshot_filetype = SCREENSHOT_FILETYPE::png;
             }
-            else {
+            else if (subcmd == "jpg") {
                 screenshot_filetype = SCREENSHOT_FILETYPE::jpg;
             }
+            lua_pushboolean(L, screenshot_enabled);
             lua_pushnumber(L, screenshot_filetype);
-            return 1;
+            return 2;
         }
     }
     return p_original_UnitXP(L);
