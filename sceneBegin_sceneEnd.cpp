@@ -15,7 +15,6 @@
 #include "utf8_to_utf16.h"
 #include "Vanilla1121_functions.h"
 #include "FPScap.h"
-#include "polyfill.h"
 
 static ID3DXFont* scene_fallback = NULL;
 static ID3DXFont* scene_fallbackBIG = NULL;
