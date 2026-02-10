@@ -22,7 +22,7 @@ bool targetNearestEnemy(float distanceLimit) {
     uint32_t objects = *reinterpret_cast<uint32_t*>(0xb41414);
     uint32_t i = *reinterpret_cast<uint32_t*>(objects + 0xac);
 
-    void* player = reinterpret_cast<void*>(vanilla1121_getVisiableObject(UnitGUID(u8"player")));
+    void* player = reinterpret_cast<void*>(vanilla1121_getVisiableObject(vanilla1121_unitGUID(u8"player")));
 
     while (i != 0 && (i & 1) == 0) {
         uint64_t currentObjectGUID = vanilla1121_unitGUID(i);
@@ -46,7 +46,7 @@ bool targetNearestEnemy(float distanceLimit) {
             && inViewingFrustum(vanilla1121_unitPosition(i), targetingRangeCone)
             && UnitXP_inSight(player, reinterpret_cast<void*>(i)) == 1) {
 
-            bool selfInCombat = vanilla1121_unitInCombat(vanilla1121_getVisiableObject(UnitGUID("player")));
+            bool selfInCombat = vanilla1121_unitInCombat(vanilla1121_getVisiableObject(vanilla1121_unitGUID("player")));
 
             if (targetingInCombatFilter && type == OBJECT_TYPE_Unit && selfInCombat) {
                 if (targetInCombat) {
@@ -86,7 +86,7 @@ bool targetEnemyWithMostHP(float distanceLimit) {
     uint32_t objects = *reinterpret_cast<uint32_t*>(0xb41414);
     uint32_t i = *reinterpret_cast<uint32_t*>(objects + 0xac);
 
-    void* player = reinterpret_cast<void*>(vanilla1121_getVisiableObject(UnitGUID(u8"player")));
+    void* player = reinterpret_cast<void*>(vanilla1121_getVisiableObject(vanilla1121_unitGUID(u8"player")));
 
     while (i != 0 && (i & 1) == 0) {
         uint64_t currentObjectGUID = vanilla1121_unitGUID(i);
@@ -111,7 +111,7 @@ bool targetEnemyWithMostHP(float distanceLimit) {
             && inViewingFrustum(vanilla1121_unitPosition(i), targetingRangeCone)
             && UnitXP_inSight(player, reinterpret_cast<void*>(i)) == 1) {
 
-            bool selfInCombat = vanilla1121_unitInCombat(vanilla1121_getVisiableObject(UnitGUID("player")));
+            bool selfInCombat = vanilla1121_unitInCombat(vanilla1121_getVisiableObject(vanilla1121_unitGUID("player")));
 
             if (targetingInCombatFilter && type == OBJECT_TYPE_Unit && selfInCombat) {
                 if (targetInCombat) {
@@ -152,7 +152,7 @@ bool targetWorldBoss(float distanceLimit) {
     uint32_t objects = *reinterpret_cast<uint32_t*>(0xb41414);
     uint32_t i = *reinterpret_cast<uint32_t*>(objects + 0xac);
 
-    void* player = reinterpret_cast<void*>(vanilla1121_getVisiableObject(UnitGUID(u8"player")));
+    void* player = reinterpret_cast<void*>(vanilla1121_getVisiableObject(vanilla1121_unitGUID(u8"player")));
 
     while (i != 0 && (i & 1) == 0) {
         uint64_t currentObjectGUID = vanilla1121_unitGUID(i);
@@ -176,7 +176,7 @@ bool targetWorldBoss(float distanceLimit) {
             && (targetInCombat == true || vanilla1121_unitCreatureType(i) != 8)
             && inViewingFrustum(vanilla1121_unitPosition(i), targetingRangeCone)) {
 
-            bool selfInCombat = vanilla1121_unitInCombat(vanilla1121_getVisiableObject(UnitGUID("player")));
+            bool selfInCombat = vanilla1121_unitInCombat(vanilla1121_getVisiableObject(vanilla1121_unitGUID("player")));
 
             if (targetingInCombatFilter && type == OBJECT_TYPE_Unit && selfInCombat) {
                 if (targetInCombat) {
@@ -205,7 +205,7 @@ bool targetWorldBoss(float distanceLimit) {
 
         // TODO: Maybe we could find last target without lagging
         //static uint64_t lastTarget = 0;
-        uint64_t lastTarget = vanilla1121_unitTargetGUID(vanilla1121_getVisiableObject(UnitGUID("player")));
+        uint64_t lastTarget = vanilla1121_unitTargetGUID(vanilla1121_getVisiableObject(vanilla1121_unitGUID("player")));
 
         bool lastTargetIsBoss = false;
         for (auto const& m : mobs) {
@@ -344,11 +344,11 @@ bool targetEnemyInCycle(MOB_SELECTFUNCTION selectFunction) {
     uint32_t objects = *reinterpret_cast<uint32_t*>(0xb41414);
     uint32_t i = *reinterpret_cast<uint32_t*>(objects + 0xac);
 
-    void* player = reinterpret_cast<void*>(vanilla1121_getVisiableObject(UnitGUID(u8"player")));
+    void* player = reinterpret_cast<void*>(vanilla1121_getVisiableObject(vanilla1121_unitGUID(u8"player")));
 
     // TODO: Maybe we could find last target without lagging
     //static uint64_t lastTarget = 0;
-    uint64_t lastTarget = vanilla1121_unitTargetGUID(vanilla1121_getVisiableObject(UnitGUID("player")));
+    uint64_t lastTarget = vanilla1121_unitTargetGUID(vanilla1121_getVisiableObject(vanilla1121_unitGUID("player")));
 
     if (lastTarget == 0) {
         return targetNearestEnemy(targetingFarRange);
@@ -376,7 +376,7 @@ bool targetEnemyInCycle(MOB_SELECTFUNCTION selectFunction) {
             && inViewingFrustum(vanilla1121_unitPosition(i), targetingRangeCone)
             && UnitXP_inSight(player, reinterpret_cast<void*>(i)) == 1) {
 
-            bool selfInCombat = vanilla1121_unitInCombat(vanilla1121_getVisiableObject(UnitGUID("player")));
+            bool selfInCombat = vanilla1121_unitInCombat(vanilla1121_getVisiableObject(vanilla1121_unitGUID("player")));
 
             if (targetingInCombatFilter && type == OBJECT_TYPE_Unit && selfInCombat) {
                 if (targetInCombat) {
@@ -428,11 +428,11 @@ bool targetMarkedEnemyInCycle(MOB_SELECTFUNCTION_WITH_MARK selectFunction, strin
     uint32_t objects = *reinterpret_cast<uint32_t*>(0xb41414);
     uint32_t i = *reinterpret_cast<uint32_t*>(objects + 0xac);
 
-    void* player = reinterpret_cast<void*>(vanilla1121_getVisiableObject(UnitGUID(u8"player")));
+    void* player = reinterpret_cast<void*>(vanilla1121_getVisiableObject(vanilla1121_unitGUID(u8"player")));
 
     // TODO: Maybe we could find last target without lagging
     //static uint64_t lastTarget = 0;
-    uint64_t lastTarget = vanilla1121_unitTargetGUID(vanilla1121_getVisiableObject(UnitGUID("player")));
+    uint64_t lastTarget = vanilla1121_unitTargetGUID(vanilla1121_getVisiableObject(vanilla1121_unitGUID("player")));
 
     while (i != 0 && (i & 1) == 0) {
         uint64_t currentObjectGUID = vanilla1121_unitGUID(i);
@@ -456,7 +456,7 @@ bool targetMarkedEnemyInCycle(MOB_SELECTFUNCTION_WITH_MARK selectFunction, strin
             && (targetInCombat == true || vanilla1121_unitCreatureType(i) != 8)
             && inViewingFrustum(vanilla1121_unitPosition(i), targetingRangeCone)) {
 
-            bool selfInCombat = vanilla1121_unitInCombat(vanilla1121_getVisiableObject(UnitGUID("player")));
+            bool selfInCombat = vanilla1121_unitInCombat(vanilla1121_getVisiableObject(vanilla1121_unitGUID("player")));
 
             if (targetingInCombatFilter && type == OBJECT_TYPE_Unit && selfInCombat) {
                 if (targetInCombat) {
@@ -503,11 +503,11 @@ bool targetEnemyConsideringDistance(MOB_SELECTFUNCTION selectFunction) {
     uint32_t objects = *reinterpret_cast<uint32_t*>(0xb41414);
     uint32_t i = *reinterpret_cast<uint32_t*>(objects + 0xac);
 
-    void* player = reinterpret_cast<void*>(vanilla1121_getVisiableObject(UnitGUID(u8"player")));
+    void* player = reinterpret_cast<void*>(vanilla1121_getVisiableObject(vanilla1121_unitGUID(u8"player")));
 
     // TODO: Maybe we could find last target without lagging
     //static uint64_t lastTarget = 0;
-    uint64_t lastTarget = vanilla1121_unitTargetGUID(vanilla1121_getVisiableObject(UnitGUID("player")));
+    uint64_t lastTarget = vanilla1121_unitTargetGUID(vanilla1121_getVisiableObject(vanilla1121_unitGUID("player")));
 
     if (lastTarget == 0) {
         return targetNearestEnemy(targetingFarRange);
@@ -534,7 +534,7 @@ bool targetEnemyConsideringDistance(MOB_SELECTFUNCTION selectFunction) {
             && (targetInCombat == true || vanilla1121_unitCreatureType(i) != 8)
             && inViewingFrustum(vanilla1121_unitPosition(i), targetingRangeCone)) {
 
-            bool selfInCombat = vanilla1121_unitInCombat(vanilla1121_getVisiableObject(UnitGUID("player")));
+            bool selfInCombat = vanilla1121_unitInCombat(vanilla1121_getVisiableObject(vanilla1121_unitGUID("player")));
             int inSightTest = UnitXP_inSight(player, reinterpret_cast<void*>(i));
             float meleeDistance = UnitXP_distanceBetween(player, reinterpret_cast<void*>(i), METER_MELEE_AUTOATTACK);
 

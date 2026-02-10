@@ -156,9 +156,8 @@ double luaL_checknumber(void* L, int index);
 int lua_pcall(void* L, int nArgs, int nResults, int errFunction);
 
 
-// WoW C function
 // Get GUID from UnitID
-uint64_t UnitGUID(const char* unitID);
+uint64_t vanilla1121_unitGUID(const char* unitID);
 // Get GUID from unit
 uint64_t vanilla1121_unitGUID(uint32_t unit);
 // Test intersect in world, p1 and p2 for input, intersectPoint and distance for output.
@@ -264,7 +263,9 @@ std::string vanilla1121_getCVar(const std::string& name);
 std::string vanilla1121_isInInstance();
 void vanilla1121_unitDisable(uint32_t unit);
 void vanilla1121_unitEnable(uint32_t unit);
+// Get the global GxDevice
 uint32_t vanilla1121_gxDevice();
+// Get DirectX 9 device from GxDevice
 void* vanilla1121_d3dDevice(uint32_t gxDevice);
 // To execute Lua within AddOns. Contributed by MarcelineVQ
 void vanilla1121_luaBegin(uint32_t& savingPreviousExecutionStateTo, const uint32_t beginningExecutionState);
@@ -273,3 +274,5 @@ void vanilla1121_luaEnd(const uint32_t savedExecutionStateToRestore);
 // The current AddOn executionState. Contributed by MarcelineVQ
 uint32_t vanilla1121_luaExecutionState();
 extern std::mt19937 rnd;
+// Get the current function's return(RET) address.
+uintptr_t retAddress();

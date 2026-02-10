@@ -38,7 +38,7 @@ static int shouldHaveNameplate(void* voidUnit) {
 
     // It's super complex about the combination of prioritize target or/and mark
     if (prioritizeMarkedNameplate || prioritizeTargetNameplate) {
-        uint64_t targetGUID = UnitGUID("target");
+        uint64_t targetGUID = vanilla1121_unitGUID("target");
         if (targetGUID > 0 || nameplatesHasMarkOnThem) {
             if (prioritizeTargetNameplate && prioritizeMarkedNameplate) {
                 if (guidUnderNameplate == targetGUID || vanilla1121_getTargetMark(guidUnderNameplate) > 0) {
@@ -92,7 +92,7 @@ static int shouldHaveNameplate(void* voidUnit) {
 
     const float nearPlayerDistance = 8.0f;
     if (showInCombatNameplatesNearPlayer && vanilla1121_unitInCombat(reinterpret_cast<uint32_t>(voidUnit))) {
-        float distance = UnitXP_distanceBetween(guidUnderNameplate, UnitGUID("player"), METER_RANGED);
+        float distance = UnitXP_distanceBetween(guidUnderNameplate, vanilla1121_unitGUID("player"), METER_RANGED);
         if (distance >= 0.0f && distance < nearPlayerDistance) {
             return 1;
         }

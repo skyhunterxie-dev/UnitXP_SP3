@@ -129,7 +129,7 @@ float UnitXP_distanceBetween(const string unit0, const string unit1, distanceMet
         }
     }
     else {
-        guid0 = UnitGUID(unit0.data());
+        guid0 = vanilla1121_unitGUID(unit0.data());
         if (guid0 == 0) {
             return -1.0f;
         }
@@ -143,7 +143,7 @@ float UnitXP_distanceBetween(const string unit0, const string unit1, distanceMet
         }
     }
     else {
-        guid1 = UnitGUID(unit1.data());
+        guid1 = vanilla1121_unitGUID(unit1.data());
         if (guid1 == 0) {
             return -1.0f;
         }

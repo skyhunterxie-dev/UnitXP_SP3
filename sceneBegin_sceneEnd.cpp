@@ -14,6 +14,8 @@
 #include "sceneBegin_sceneEnd.h"
 #include "utf8_to_utf16.h"
 #include "Vanilla1121_functions.h"
+#include "FPScap.h"
+#include "polyfill.h"
 
 static ID3DXFont* scene_fallback = NULL;
 static ID3DXFont* scene_fallbackBIG = NULL;
@@ -265,9 +267,19 @@ void scene_unloadFonts() {
     }
 }
 
-void scene_end() {
+static void scene_unload() {
     scene_unloadFonts();
     scene_unloadSprite();
+    scene_needUnload = false;
+    scene_lastDXdevice = NULL;
+    scene_needRebuildSprite = false;
+    scene_needReloadFont = false;
+    scene_spriteOnLost = false;
+    scene_fontsOnLost = false;
+}
+
+void scene_end() {
+    scene_unload();
     scene_isEnabled = false;
 }
 
@@ -374,14 +386,9 @@ bool scene_reloadFont() {
 
 
 
-ISCENEBEGIN p_sceneBegin = reinterpret_cast<ISCENEBEGIN>(0x5a1680);
-ISCENEBEGIN p_original_sceneBegin = NULL;
+SCENEBEGIN p_sceneBegin = reinterpret_cast<SCENEBEGIN>(0x5a1680);
+SCENEBEGIN p_original_sceneBegin = NULL;
 void __fastcall detoured_sceneBegin(uint32_t CGxDevice, void* ignored, uint32_t unknown) {
-    if (scene_inWorld != 1) {
-        p_original_sceneBegin(CGxDevice, unknown);
-        return;
-    }
-
     if (scene_isEnabled == false) {
         p_original_sceneBegin(CGxDevice, unknown);
         return;
@@ -397,7 +404,7 @@ void __fastcall detoured_sceneBegin(uint32_t CGxDevice, void* ignored, uint32_t 
         }
 
         std::string currentAPI{ tempBuffer };
-        
+
         if (currentAPI.find(u8"D3d") == std::string::npos) {
             scene_isEnabled = false;
             p_original_sceneBegin(CGxDevice, unknown);
@@ -411,51 +418,66 @@ void __fastcall detoured_sceneBegin(uint32_t CGxDevice, void* ignored, uint32_t 
         }
     }
 
-    LPDIRECT3DDEVICE9 dxDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(vanilla1121_d3dDevice(CGxDevice));
-    if (dxDevice == NULL || (reinterpret_cast<uintptr_t>(dxDevice) & 1) != 0) {
+    LPDIRECT3DDEVICE9 gDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(vanilla1121_d3dDevice(vanilla1121_gxDevice()));
+    if (gDevice == NULL || (reinterpret_cast<uintptr_t>(gDevice) & 1) != 0) {
         p_original_sceneBegin(CGxDevice, unknown);
         return;
     }
 
-    // DX9 DEVICE LOSS RULE by ChatGPT:
-    // OnLostDevice() is ONLY called when TestCooperativeLevel() == D3DERR_DEVICENOTRESET
-    // NEVER call it when DEVICELOST
-    // And
-    // ID3DXFont::OnResetDevice() must be called after IDirect3DDevice9::Reset(), and before any BeginScene().
-    if (D3DERR_DEVICENOTRESET == dxDevice->TestCooperativeLevel()) {
-        if (0 == *reinterpret_cast<int*>(CGxDevice + 0xf2c)) {
-            // The game would call IDirect3DDevice9::Reset() in its sceneBegin function soon
-            if (scene_fontsOnLost == false) {
-                scene_fontsOnLostDevice();
-            }
-            if (scene_spriteOnLost == false) {
-                scene_spriteOnLostDevice();
+    if (retAddress() == 0x5a1a27) {
+        // We are at right after IDirect3DDevice9::Present()
+        if (scene_needUnload) {
+            scene_unload();
+        }
+
+        if (gDevice == scene_lastDXdevice && gDevice->TestCooperativeLevel() == D3D_OK) {
+            if (scene_needRebuildSprite || scene_needReloadFont) {
+                if (scene_needRebuildSprite && scene_spriteOnLost == false) {
+                    scene_rebuildSprite();
+                }
+                if (scene_needReloadFont && scene_fontsOnLost == false) {
+                    scene_reloadFont();
+                }
             }
         }
-    }
-
-    scene_attemptFontsReset = true;
-    p_original_sceneBegin(CGxDevice, unknown);
-    scene_attemptFontsReset = false;
-}
-
-AFTERD3DRESET p_afterD3Dreset = reinterpret_cast<AFTERD3DRESET>(0x5a24a0);
-AFTERD3DRESET p_original_afterD3Dreset = NULL;
-void __fastcall detoured_afterD3Dreset(uint32_t CGxDevice, void* ignored) {
-    if (scene_inWorld != 1) {
-        p_original_afterD3Dreset(CGxDevice);
+        p_original_sceneBegin(CGxDevice, unknown);
         return;
     }
-    if (scene_attemptFontsReset) {
+
+    if (retAddress() == 0x5a256d) {
+        // We are in CGxDeviceD3d::IStateSetD3DDefaults()
         if (scene_spriteOnLost) {
             scene_spriteOnResetDevice();
         }
         if (scene_fontsOnLost) {
             scene_fontsOnResetDevice();
         }
+        p_original_sceneBegin(CGxDevice, unknown);
+        return;
     }
 
-    p_original_afterD3Dreset(CGxDevice);
+    p_original_sceneBegin(CGxDevice, unknown);
+}
+
+// DX9 DEVICE LOSS RULE by ChatGPT:
+// OnLostDevice() is ONLY called when TestCooperativeLevel() == D3DERR_DEVICENOTRESET
+// NEVER call it when DEVICELOST
+// And
+// ID3DXFont::OnResetDevice() must be called after IDirect3DDevice9::Reset(), and before any BeginScene().
+RELEASED3DRESOURCES p_releaseD3dResources = reinterpret_cast<RELEASED3DRESOURCES>(0x599900);
+RELEASED3DRESOURCES p_original_releaseD3dResources = NULL;
+void __fastcall detoured_releaseD3dResources(uint32_t self, void* ignored, int flag) {
+    // flag == 0 when d3dDevice->Reset()
+    // flag == 1 when DestroyD3dDevice()
+    if (flag == 0) {
+        scene_fontsOnLostDevice();
+        scene_spriteOnLostDevice();
+    }
+    else if (flag == 1) {
+        scene_unload();
+    }
+
+    p_original_releaseD3dResources(self, flag);
 }
 
 ISCENEEND p_sceneEnd = reinterpret_cast<ISCENEEND>(0x5a17a0);
@@ -522,8 +544,12 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
             it++;
         }
 
-        scene_sprite->Begin(D3DXSPRITE_ALPHABLEND);
+        scene_sprite->Begin(D3DXSPRITE_ALPHABLEND | D3DXSPRITE_SORT_TEXTURE);
         {
+            scene_lastDXdevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+            scene_lastDXdevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+            scene_lastDXdevice->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+
             for (auto it = smallFloatingTexts.begin(); it != smallFloatingTexts.end();) {
                 int update = -1;
                 if (it->m_serif) {
@@ -613,6 +639,11 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
     }
 
     p_original_sceneEnd(CGxDevice);
+
+    // In fact there are 2 paths could reach sceneEnd(). In theory we should check if we are at before IDirect3DDevice9::Present()
+    // However nampower is also hooking into sceneEnd(), so we can't check RET address
+    // It seems fine. The other path seems never be called
+    FPScap();
 }
 
 static void sortAddNewFloatingText(worldText::Floating& newText, std::list<worldText::Floating>& list, std::list<worldText::Floating>& secondListToCheck) {
@@ -685,7 +716,7 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
 
     uint64_t stickToGUID = *reinterpret_cast<uint64_t*>(self + 0x10);
     if (stickToGUID == 0) {
-        stickToGUID = UnitGUID("player");
+        stickToGUID = vanilla1121_unitGUID("player");
     }
 
     ID3DXFont* font = scene_fallback;
@@ -786,7 +817,7 @@ void scene_addSmallFloatingText(std::string text, int r, int g, int b, int a, wo
         serif = true;
     }
 
-    worldText::Floating newText(text, UnitGUID("player"), r, g, b, a, direction, font, scene_sprite, serif, scene_lastDXdevice);
+    worldText::Floating newText(text, vanilla1121_unitGUID("player"), r, g, b, a, direction, font, scene_sprite, serif, scene_lastDXdevice);
     sortAddNewFloatingText(newText, smallFloatingTexts, floatingTexts);
 }
 
@@ -813,7 +844,7 @@ void scene_addCritText(std::string text, int r, int g, int b, int a) {
         serif = true;
     }
 
-    uint64_t player = UnitGUID("player");
+    uint64_t player = vanilla1121_unitGUID("player");
 
     D3DCOLOR color = D3DCOLOR_ARGB(a, r, g, b);
     worldText::Crit newCrit(text, player, r, g, b, a, font, fontBIG, fontHUGE, scene_sprite, serif, scene_lastDXdevice);

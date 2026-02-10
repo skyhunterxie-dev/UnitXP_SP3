@@ -18,7 +18,7 @@ double worldText::nameplateHeight = 55.0f;
 worldText::Floating::Floating(std::string text, uint64_t stickToGUID, int r, int g, int b, int a, FLOATING_DIRECTION direction, ID3DXFont* font, ID3DXSprite* sprite, bool serif, LPDIRECT3DDEVICE9 device) {
     m_text = text;
     m_stickToGUID = stickToGUID;
-    m_playerGUID = UnitGUID("player");
+    m_playerGUID = vanilla1121_unitGUID("player");
     m_serif = serif;
     m_r = r;
     m_g = g;
@@ -178,7 +178,7 @@ worldText::Crit::Crit(std::string text, uint64_t stickToGUID, int r, int g, int 
     m_text = text;
     m_serif = serif;
     m_stickToGUID = stickToGUID;
-    m_playerGUID = UnitGUID("player");
+    m_playerGUID = vanilla1121_unitGUID("player");
     m_totalTime = 2.2;
     m_fadeOutTime = 1.6;
     m_r = r;

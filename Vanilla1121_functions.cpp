@@ -2,6 +2,7 @@
 
 #define _USE_MATH_DEFINES
 
+#include <intrin.h>
 #include <cmath>
 
 #include "Vanilla1121_functions.h"
@@ -160,7 +161,7 @@ double luaL_checknumber(void* L, int index) {
 }
 
 // Get GUID from UNIT_ID
-uint64_t UnitGUID(const char* unitID) {
+uint64_t vanilla1121_unitGUID(const char* unitID) {
     return p_UnitGUID(unitID);
 }
 
@@ -472,7 +473,7 @@ int vanilla1121_objectType(uint32_t targetObject) {
 
 int vanilla1121_unitReaction(uint32_t unit) {
     uint32_t target = unit;
-    uint32_t self = vanilla1121_getVisiableObject(UnitGUID("player"));
+    uint32_t self = vanilla1121_getVisiableObject(vanilla1121_unitGUID("player"));
     if (target == 0 || self == 0) {
         return -1;
     }
@@ -483,7 +484,7 @@ int vanilla1121_unitReaction(uint32_t unit) {
 
 int vanilla1121_unitCanBeAttacked(uint32_t unit) {
     uint32_t target = unit;
-    uint32_t self = vanilla1121_getVisiableObject(UnitGUID("player"));
+    uint32_t self = vanilla1121_getVisiableObject(vanilla1121_unitGUID("player"));
     if (target == 0 || self == 0) {
         return -1;
     }
@@ -1063,4 +1064,8 @@ int lua_pcall(void* L, int nArgs, int nResults, int errFunction) {
     typedef int(__fastcall* LUA_PCALL)(void* L, int nArgs, int nResults, int errFunction);
     auto p_lua_pcall = reinterpret_cast<LUA_PCALL>(0x6F41A0);
     return p_lua_pcall(L, nArgs, nResults, errFunction);
+}
+
+uintptr_t retAddress() {
+    return reinterpret_cast<uintptr_t>(_ReturnAddress());
 }

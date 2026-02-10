@@ -57,9 +57,9 @@ void scene_onPlayerLeavingWorld();
 // -- Pointer is __thiscall with 1st param being THIS
 // -- The detoured function is __fastcall with 1st param being THIS, and 2nd param being IGNORED
 
-typedef void(__thiscall* ISCENEBEGIN)(uint32_t, uint32_t);
-extern ISCENEBEGIN p_sceneBegin;
-extern ISCENEBEGIN p_original_sceneBegin;
+typedef void(__thiscall* SCENEBEGIN)(uint32_t, uint32_t);
+extern SCENEBEGIN p_sceneBegin;
+extern SCENEBEGIN p_original_sceneBegin;
 void __fastcall detoured_sceneBegin(uint32_t CGxDevice, void* ignored, uint32_t unknown);
 
 typedef void(__thiscall* ISCENEEND)(uint32_t);
@@ -67,11 +67,10 @@ extern ISCENEEND p_sceneEnd;
 extern ISCENEEND p_original_sceneEnd;
 void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored);
 
-// I'm not sure if this function is __thiscall or __fastcall
-typedef void(__thiscall* AFTERD3DRESET)(uint32_t);
-extern AFTERD3DRESET p_afterD3Dreset;
-extern AFTERD3DRESET p_original_afterD3Dreset;
-void __fastcall detoured_afterD3Dreset(uint32_t CGxDevice, void* ignored);
+typedef void(__thiscall* RELEASED3DRESOURCES)(uint32_t, int);
+extern RELEASED3DRESOURCES p_releaseD3dResources;
+extern RELEASED3DRESOURCES p_original_releaseD3dResources;
+void __fastcall detoured_releaseD3dResources(uint32_t self, void* ignored, int flag);
 
 typedef void(__thiscall* CREATEWORLDTEXT)(uint32_t, int, char const*, uint32_t, uint32_t);
 extern CREATEWORLDTEXT p_createWorldText;

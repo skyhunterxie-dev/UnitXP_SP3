@@ -682,10 +682,6 @@ BOOL APIENTRY DllMain(HMODULE hModule,
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for camera updateCallback function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
         }
-        if (MH_CreateHook(p_GxScenePresent_0x58a960, &detoured_GxScenePresent_0x58a960, reinterpret_cast<LPVOID*>(&p_original_GxScenePresent_0x58a960)) != MH_OK) {
-            MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for GxScenePresent function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-            return FALSE;
-        }
         if (MH_CreateHook(p_OrganicSmooth, &detoured_OrganicSmooth, reinterpret_cast<LPVOID*>(&p_original_OrganicSmooth)) != MH_OK) {
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for OrganicSmooth function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
@@ -796,8 +792,8 @@ BOOL APIENTRY DllMain(HMODULE hModule,
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for fun_0x7c29f0 function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
         }
-        if (MH_CreateHook(p_afterD3Dreset, &detoured_afterD3Dreset, reinterpret_cast<LPVOID*>(&p_original_afterD3Dreset)) != MH_OK) {
-            MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for afterD3Dreset function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+        if (MH_CreateHook(p_releaseD3dResources, &detoured_releaseD3dResources, reinterpret_cast<LPVOID*>(&p_original_releaseD3dResources)) != MH_OK) {
+            MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for releaseD3dResources function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
         }
         if (MH_EnableHook(MH_ALL_HOOKS) != MH_OK) {
@@ -816,8 +812,8 @@ BOOL APIENTRY DllMain(HMODULE hModule,
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to disable hooks. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
             }
-            if (MH_RemoveHook(p_afterD3Dreset) != MH_OK) {
-                MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for afterD3Dreset function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+            if (MH_RemoveHook(p_releaseD3dResources) != MH_OK) {
+                MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for releaseD3dResources function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
             }
             if (MH_RemoveHook(p_fun_0x7c29f0) != MH_OK) {
@@ -930,10 +926,6 @@ BOOL APIENTRY DllMain(HMODULE hModule,
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for OrganicSmooth function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
             }
-            if (MH_RemoveHook(p_GxScenePresent_0x58a960) != MH_OK) {
-                MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for GxScenePresent function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-                return FALSE;
-            }
             if (MH_RemoveHook(p_CGCamera_updateCallback_0x511bc0) != MH_OK) {
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for camera updateCallback function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
@@ -979,5 +971,3 @@ BOOL APIENTRY DllMain(HMODULE hModule,
     }
     return TRUE;
 }
-
-

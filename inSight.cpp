@@ -233,7 +233,7 @@ int UnitXP_behind(const string unit0, const string unit1) {
         }
     }
     else {
-        guid1 = UnitGUID(unit1.data());
+        guid1 = vanilla1121_unitGUID(unit1.data());
         if (guid1 == 0) {
             return -1;
         }
@@ -247,7 +247,7 @@ int UnitXP_behind(const string unit0, const string unit1) {
         }
     }
     else {
-        guid0 = UnitGUID(unit0.data());
+        guid0 = vanilla1121_unitGUID(unit0.data());
         if (guid0 == 0) {
             return -1;
         }
@@ -310,7 +310,7 @@ int camera_inSight(const void* unitvoid) {
     }
 
     uint64_t guid = vanilla1121_unitGUID(unit);
-    if (guid == UnitGUID("player")) {
+    if (guid == vanilla1121_unitGUID("player")) {
         return 1;
     }
 
@@ -428,7 +428,7 @@ int UnitXP_inSight(const string unit0, const string unit1) {
         }
     }
     else {
-        guid1 = UnitGUID(unit1.data());
+        guid1 = vanilla1121_unitGUID(unit1.data());
         if (guid1 == 0) {
             return -1;
         }
@@ -446,7 +446,7 @@ int UnitXP_inSight(const string unit0, const string unit1) {
         }
     }
     else {
-        guid0 = UnitGUID(unit0.data());
+        guid0 = vanilla1121_unitGUID(unit0.data());
         if (guid0 == 0) {
             return -1;
         }

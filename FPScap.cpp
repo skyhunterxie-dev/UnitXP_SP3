@@ -15,9 +15,6 @@
 #include "sceneBegin_sceneEnd.h"
 #include "utf8_to_utf16.h"
 
-GXSCENEPRESENT_0x58a960 p_GxScenePresent_0x58a960 = reinterpret_cast<GXSCENEPRESENT_0x58a960>(0x58a960);
-GXSCENEPRESENT_0x58a960 p_original_GxScenePresent_0x58a960 = NULL;
-
 typedef LONG(NTAPI* NTDELAYEXECUTION)(BOOLEAN Alertable, PLARGE_INTEGER DelayInterval);
 static NTDELAYEXECUTION NtDelayExecution = NULL;
 
@@ -31,56 +28,22 @@ static LARGE_INTEGER fpsResolutionUnit = {}; // Same as timerPrecision but in CP
 static MMRESULT timerPrecisionSet = TIMERR_NOCANDO;
 static const UINT timerPrecision = 1u;
 
-void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
-    if (scene_needUnload) {
-        p_original_GxScenePresent_0x58a960(unknown);
-        scene_unloadFonts();
-        scene_unloadSprite();
-        scene_needUnload = false;
-        scene_lastDXdevice = NULL;
-        scene_needRebuildSprite = false;
-        scene_needReloadFont = false;
-        scene_spriteOnLost = false;
-        scene_fontsOnLost = false;
-        return;
-    }
-
+void FPScap() {
     // It is reported that unlimited FPS would make the game load faster
     // so we delay limiter till PLAYER_ENTERING_WORLD
     if (scene_inWorld != 1) {
-        p_original_GxScenePresent_0x58a960(unknown);
         return;
-    }
-
-    LPDIRECT3DDEVICE9 gDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(vanilla1121_d3dDevice(vanilla1121_gxDevice()));
-    if (scene_lastDXdevice != NULL
-        && scene_lastDXdevice == gDevice
-        && scene_lastDXdevice->TestCooperativeLevel() == D3D_OK) {
-        if (scene_needRebuildSprite || scene_needReloadFont) {
-
-            p_original_GxScenePresent_0x58a960(unknown);
-
-            if (scene_needRebuildSprite && scene_spriteOnLost == false) {
-                scene_rebuildSprite();
-            }
-            if (scene_needReloadFont && scene_fontsOnLost == false) {
-                scene_reloadFont();
-            }
-            return;
-        }
     }
 
     bool inForeground = vanilla1121_gameInForeground();
 
     if (inForeground) {
         if (targetFrameInterval.QuadPart < 1) {
-            p_original_GxScenePresent_0x58a960(unknown);
             return;
         }
     }
     else {
         if (backgroundFrameInterval.QuadPart < 1) {
-            p_original_GxScenePresent_0x58a960(unknown);
             return;
         }
     }
@@ -121,11 +84,6 @@ void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown) {
         }
         QueryPerformanceCounter(&now);
     }
-
-    p_original_GxScenePresent_0x58a960(unknown);
-
-    // It is necessary to query a new timestamp, because IDirect3DDevice9::Present() can block
-    QueryPerformanceCounter(&now);
 
     // From https://github.com/doitsujin/dxvk/blob/4799558d322f67d1ff8f2c3958ff03e776b65bc6/src/util/util_fps_limiter.cpp#L51
     if (inForeground) {

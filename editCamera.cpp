@@ -478,7 +478,7 @@ int __fastcall detoured_CGCamera_updateCallback_0x511bc0(void* unknown1, uint32_
             editPtr[2] = cameraTranslatedPosition.z;
 
             if (cameraFollowTarget) {
-                uint64_t targetGUID = UnitGUID("target");
+                uint64_t targetGUID = vanilla1121_unitGUID("target");
                 if (targetGUID > 0) {
                     uint32_t t = vanilla1121_getVisiableObject(targetGUID);
                     if (t > 0 &&

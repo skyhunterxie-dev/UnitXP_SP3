@@ -3,10 +3,7 @@
 #include <cstdint>
 #include <string>
 
-typedef void(__fastcall* GXSCENEPRESENT_0x58a960)(uint32_t);
-extern GXSCENEPRESENT_0x58a960 p_GxScenePresent_0x58a960;
-extern GXSCENEPRESENT_0x58a960 p_original_GxScenePresent_0x58a960;
-void __fastcall detoured_GxScenePresent_0x58a960(uint32_t unknown);
+void FPScap();
 
 void initFPScap();
 void endFPScap();
