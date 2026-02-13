@@ -2,8 +2,8 @@
 
 #define _USE_MATH_DEFINES
 
-#include <intrin.h>
 #include <cmath>
+#include <sstream>
 
 #include "Vanilla1121_functions.h"
 #include "edit_CWorld_Intersect.h"
@@ -80,6 +80,8 @@ static auto p_getCamera = reinterpret_cast<GETACTIVECAMERA>(0x4818F0);
 const float cameraIntersectBlur = 0.01f;
 
 std::mt19937 rnd(std::random_device{}());
+
+const float fltTolerance = 1e-5f;
 
 // To get lua_State pointer
 void* GetContext(void) {
@@ -184,7 +186,7 @@ bool CWorld_Intersect(const C3Vector* p1, const C3Vector* p2, C3Vector* intersec
         intersectPoint->z = (p2->z + p1->z) / 2;
         return true;
     }
-    if (checkDistance <= std::numeric_limits<float>::epsilon()) {
+    if (checkDistance <= fltTolerance) {
         return false;
     }
 
@@ -737,7 +739,7 @@ void vanilla1121_runScript(std::string luaScript) {
 }
 
 float vectorLength(C3Vector& vec) {
-    return std::sqrt(std::pow(vec.x, 2.0f) + std::pow(vec.y, 2.0f) + std::pow(vec.z, 2.0f));
+    return std::sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
 }
 
 C3Vector vectorCrossProduct(const C3Vector& a, const C3Vector& b) {
@@ -844,16 +846,17 @@ bool vanilla1121_unitIsMounted(uint32_t unit) {
     return vanilla1121_unitMountDisplayID(unit) != 0;
 }
 
-bool vectorsAreNear(C3Vector& a, C3Vector& b) {
-    if (UnitXP_distanceBetween(a, b) <= std::numeric_limits<float>::epsilon()) {
+bool positionsAreNear(const C3Vector& a, const C3Vector& b) {
+    if (UnitXP_distanceBetween(a, b) <= fltTolerance) {
         return true;
     }
     else {
         return false;
     }
 }
-bool vectorAlmostZero(C3Vector& vec) {
-    if (vectorLength(vec) <= std::numeric_limits<float>::epsilon()) {
+bool vectorAlmostZero(const C3Vector& vec) {
+    const double lengthSquare = static_cast<double>(vec.x) * static_cast<double>(vec.x) + static_cast<double>(vec.y) * static_cast<double>(vec.y) + static_cast<double>(vec.z) * static_cast<double>(vec.z);
+    if (lengthSquare <= static_cast<double>(fltTolerance) * static_cast<double>(fltTolerance)) {
         return true;
     }
     else {
@@ -1047,7 +1050,7 @@ void vanilla1121_luaEnd(const uint32_t savedExecutionStateToRestore) {
     if (*counter != 0) {
         *state = savedExecutionStateToRestore;
     }
-    
+
 
     (*counter)--;
     if (*counter < 0) {
@@ -1066,6 +1069,76 @@ int lua_pcall(void* L, int nArgs, int nResults, int errFunction) {
     return p_lua_pcall(L, nArgs, nResults, errFunction);
 }
 
-uintptr_t retAddress() {
-    return reinterpret_cast<uintptr_t>(_ReturnAddress());
+static void getExeTextSectionAddress(uintptr_t& min, uintptr_t& max) {
+    // By ChatGPT
+
+    HMODULE exe = GetModuleHandle(NULL);
+    if (exe == NULL) {
+        MessageBoxW(NULL, utf8_to_utf16(u8"Failed to get module handle of the game.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+        return;
+    }
+
+    auto* base = reinterpret_cast<std::uint8_t*>(exe);
+
+    auto* dos = reinterpret_cast<IMAGE_DOS_HEADER*>(base);
+    if (dos->e_magic != IMAGE_DOS_SIGNATURE) {
+        MessageBoxW(NULL, utf8_to_utf16(u8"DOS header is wrong.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+        return;
+    }
+
+    auto* nt = reinterpret_cast<IMAGE_NT_HEADERS*>(base + dos->e_lfanew);
+    if (nt->Signature != IMAGE_NT_SIGNATURE) {
+        MessageBoxW(NULL, utf8_to_utf16(u8"NT header is wrong.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+        return;
+    }
+
+    auto* section = IMAGE_FIRST_SECTION(nt);
+
+    for (unsigned int i = 0; i < nt->FileHeader.NumberOfSections; ++i, ++section) {
+        if (std::memcmp(section->Name, ".text", 5) == 0) {
+            min = reinterpret_cast<uintptr_t>(base + section->VirtualAddress);
+
+            uintptr_t size = section->Misc.VirtualSize ? section->Misc.VirtualSize : section->SizeOfRawData;
+
+            max = min + size;
+
+            return;
+        }
+    }
+    MessageBoxW(NULL, utf8_to_utf16(u8"Failed to determine .text section of the game.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+    return;
+}
+
+static std::string getModuleNameFromAddress(uintptr_t addr) {
+    // By ChatGPT
+    HMODULE hMod = NULL;
+    if (0 != GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, reinterpret_cast<LPCSTR>(addr), &hMod)) {
+        static char path[MAX_PATH] = {};
+        if (0 != GetModuleFileNameA(hMod, path, MAX_PATH)) {
+            std::string result{ path };
+            return result;
+        }
+    }
+    return "";
+}
+
+bool retAddressCheck(uintptr_t ret){
+    static uintptr_t minText = 0;
+    static uintptr_t maxText = 0;
+
+    if (minText == 0 || maxText == 0) {
+        getExeTextSectionAddress(minText, maxText);
+    }
+
+    if (ret < minText || ret >= maxText) {
+        static bool skipMessage = false;
+        if (skipMessage == false) {
+            std::stringstream ss{};
+            ss << "RET address is not in the game but in " << getModuleNameFromAddress(ret) << "\nIt is incompatible with UnitXP SP3.";
+            MessageBoxW(NULL, utf8_to_utf16(ss.str()).data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+            skipMessage = true;
+        }
+        return false;
+    }
+    return true;
 }

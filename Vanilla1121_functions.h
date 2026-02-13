@@ -249,8 +249,8 @@ C3Vector vectorFromFloatArray(const float* f);
 C3Vector vectorFromFloatArrayByIndex(const uint32_t base, const uint16_t index);
 // Return 4 * M_PI for error
 float angleBetweenVectors(C3Vector& a, C3Vector& b);
-bool vectorsAreNear(C3Vector& a, C3Vector& b);
-bool vectorAlmostZero(C3Vector& vec);
+bool positionsAreNear(const C3Vector& a, const C3Vector& b);
+bool vectorAlmostZero(const C3Vector& vec);
 HWND vanilla1121_gameWindow();
 RECT vanilla1121_gameClientRect();
 bool vanilla1121_gameInForeground();
@@ -274,5 +274,6 @@ void vanilla1121_luaEnd(const uint32_t savedExecutionStateToRestore);
 // The current AddOn executionState. Contributed by MarcelineVQ
 uint32_t vanilla1121_luaExecutionState();
 extern std::mt19937 rnd;
-// Get the current function's return(RET) address.
-uintptr_t retAddress();
+// Check if RET address is in the game or another mod
+bool retAddressCheck(uintptr_t ret);
+extern const float fltTolerance;

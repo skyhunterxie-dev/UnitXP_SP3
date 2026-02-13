@@ -11,6 +11,8 @@
 #include <fstream>
 #include <limits>
 
+#include <Windows.h>
+
 #include "MinHook.h"
 #include "utf8_to_utf16.h"
 #include "Vanilla1121_functions.h"
@@ -645,6 +647,9 @@ BOOL APIENTRY DllMain(HMODULE hModule,
         scene_init();
 
         initFPScap();
+
+        // We do the same as DXVK/VanillaFixes
+        SetProcessDPIAware();
 
         if (edit_CWorld_Intersect_init() == false) {
             return FALSE;

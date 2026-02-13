@@ -1,5 +1,7 @@
 ﻿#include "pch.h"
 
+#include <Windows.h>
+
 #include <algorithm>
 #include <cmath>
 
@@ -8,6 +10,7 @@
 #include "distanceBetween.h"
 #include "inSight.h"
 #include "performanceProfiling.h"
+#include "utf8_to_utf16.h"
 
 CGCAMERA_UPDATECALLBACK_0x511bc0 p_CGCamera_updateCallback_0x511bc0 = reinterpret_cast<CGCAMERA_UPDATECALLBACK_0x511bc0>(0x511bc0);
 CGCAMERA_UPDATECALLBACK_0x511bc0 p_original_CGCamera_updateCallback_0x511bc0 = NULL;
@@ -139,6 +142,12 @@ static void cameraAddPitch(uint32_t camera, float delta) {
     vecForward.z += delta;
 
     if (vectorAlmostZero(vecForward)) {
+        //TODO DEBUG
+        static bool test = false;
+        if (test == false) {
+            MessageBoxW(NULL, utf8_to_utf16(u8"Forward vector is almost zero.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+            test = true;
+        }
         return;
     }
     vectorNormalize(vecForward);
@@ -191,7 +200,7 @@ static C3Vector cameraTranslate(const uint32_t camera, float horizontalDelta, fl
         }
     }
 
-    if (std::abs(horizontalDelta) > std::numeric_limits<float>::epsilon()) {
+    if (std::abs(horizontalDelta) > fltTolerance) {
         if (horizontalDelta > 0.0f) {
             // Translating towards right
             result.x = std::abs(horizontalDelta) * (b.y - a.y) / distanceCameraToTarget + a.x;
@@ -204,7 +213,7 @@ static C3Vector cameraTranslate(const uint32_t camera, float horizontalDelta, fl
         }
     }
 
-    if (std::abs(verticalDelta) > std::numeric_limits<float>::epsilon()) {
+    if (std::abs(verticalDelta) > fltTolerance) {
         result.z += verticalDelta;
     }
 
@@ -384,12 +393,12 @@ int __fastcall detoured_CGCamera_updateCallback_0x511bc0(void* unknown1, uint32_
 
             cameraTranslatedPosition = cameraTranslate(camera, cameraHorizontalAddend, cameraVerticalAddend);
 
-            if (std::abs(cameraPitchAddend) > std::numeric_limits<float>::epsilon()) {
+            if (std::abs(cameraPitchAddend) > fltTolerance) {
                 cameraAddPitch(camera, cameraPitchAddend);
             }
 
             // Collision test
-            if (cameraPinHeight || std::abs(cameraVerticalAddend) > std::numeric_limits<float>::epsilon() || std::abs(cameraHorizontalAddend) > std::numeric_limits<float>::epsilon() || std::abs(cameraPitchAddend) > std::numeric_limits<float>::epsilon()) {
+            if (cameraPinHeight || std::abs(cameraVerticalAddend) > fltTolerance || std::abs(cameraHorizontalAddend) > fltTolerance || std::abs(cameraPitchAddend) > fltTolerance) {
                 C3Vector verticalNearClipCorrection = {};
                 C3Vector horizontalNearClipCorrection = {};
                 C3Vector verticalCameraCollisionCorrection = {};
@@ -399,22 +408,22 @@ int __fastcall detoured_CGCamera_updateCallback_0x511bc0(void* unknown1, uint32_
                 QueryPerformanceCounter(&now);
 
                 if (now.QuadPart - lastCameraCollisionTime.QuadPart > cameraCollisionRefreshInterval.QuadPart) {
-                    if (false == vectorsAreNear(cameraTranslatedPosition, lastCameraTranslatedPosition) || (std::abs(std::abs(lastCameraPitchAddend) - std::abs(cameraPitchAddend)) > std::numeric_limits<float>::epsilon())) {
+                    if (false == positionsAreNear(cameraTranslatedPosition, lastCameraTranslatedPosition) || (std::abs(std::abs(lastCameraPitchAddend) - std::abs(cameraPitchAddend)) > fltTolerance)) {
                         QueryPerformanceCounter(&lastCameraCollisionTime);
                         lastCameraTranslatedPosition = cameraTranslatedPosition;
                         lastCameraPitchAddend = cameraPitchAddend;
 
-                        if (cameraPinHeight || std::abs(cameraVerticalAddend) > std::numeric_limits<float>::epsilon() || std::abs(cameraPitchAddend) > std::numeric_limits<float>::epsilon()) {
+                        if (cameraPinHeight || std::abs(cameraVerticalAddend) > fltTolerance || std::abs(cameraPitchAddend) > fltTolerance) {
                             verticalNearClipCorrection = nearClipCollisionCheckForVerticalTranslation(camera, cameraOriginalPosition, cameraTranslatedPosition);
                         }
                         lastVerticalNearClipCorrection = verticalNearClipCorrection;
 
-                        if (std::abs(cameraHorizontalAddend) > std::numeric_limits<float>::epsilon()) {
+                        if (std::abs(cameraHorizontalAddend) > fltTolerance) {
                             horizontalNearClipCorrection = nearClipCollisionCheckForHorizontalTranslation(camera, cameraHorizontalAddend, cameraOriginalPosition, cameraTranslatedPosition);
                         }
                         lastHorizontalNearClipCorrection = horizontalNearClipCorrection;
 
-                        if (cameraPinHeight || std::abs(cameraVerticalAddend) > std::numeric_limits<float>::epsilon() || std::abs(cameraHorizontalAddend) > std::numeric_limits<float>::epsilon() || std::abs(cameraPitchAddend) > std::numeric_limits<float>::epsilon()) {
+                        if (cameraPinHeight || std::abs(cameraVerticalAddend) > fltTolerance || std::abs(cameraHorizontalAddend) > fltTolerance || std::abs(cameraPitchAddend) > fltTolerance) {
                             // Check if camera hits a wall
                             float cameraIntersectDistance = 1.0f;
                             C3Vector cameraIntersectPoint = {};
@@ -429,26 +438,26 @@ int __fastcall detoured_CGCamera_updateCallback_0x511bc0(void* unknown1, uint32_
                         lastHorizontalCameraCollisionCorrection = horizontalCameraCollisionCorrection;
                     }
                     else {
-                        if (cameraPinHeight || std::abs(cameraVerticalAddend) > std::numeric_limits<float>::epsilon() || std::abs(cameraPitchAddend) > std::numeric_limits<float>::epsilon()) {
+                        if (cameraPinHeight || std::abs(cameraVerticalAddend) > fltTolerance || std::abs(cameraPitchAddend) > fltTolerance) {
                             verticalNearClipCorrection = lastVerticalNearClipCorrection;
                         }
-                        if (std::abs(cameraHorizontalAddend) > std::numeric_limits<float>::epsilon()) {
+                        if (std::abs(cameraHorizontalAddend) > fltTolerance) {
                             horizontalNearClipCorrection = lastHorizontalNearClipCorrection;
                         }
-                        if (cameraPinHeight || std::abs(cameraVerticalAddend) > std::numeric_limits<float>::epsilon() || std::abs(cameraHorizontalAddend) > std::numeric_limits<float>::epsilon() || std::abs(cameraPitchAddend) > std::numeric_limits<float>::epsilon()) {
+                        if (cameraPinHeight || std::abs(cameraVerticalAddend) > fltTolerance || std::abs(cameraHorizontalAddend) > fltTolerance || std::abs(cameraPitchAddend) > fltTolerance) {
                             horizontalCameraCollisionCorrection = lastHorizontalCameraCollisionCorrection;
                             verticalCameraCollisionCorrection = lastVerticalCameraCollisionCorrection;
                         }
                     }
                 }
                 else {
-                    if (cameraPinHeight || std::abs(cameraVerticalAddend) > std::numeric_limits<float>::epsilon() || std::abs(cameraPitchAddend) > std::numeric_limits<float>::epsilon()) {
+                    if (cameraPinHeight || std::abs(cameraVerticalAddend) > fltTolerance || std::abs(cameraPitchAddend) > fltTolerance) {
                         verticalNearClipCorrection = lastVerticalNearClipCorrection;
                     }
-                    if (std::abs(cameraHorizontalAddend) > std::numeric_limits<float>::epsilon()) {
+                    if (std::abs(cameraHorizontalAddend) > fltTolerance) {
                         horizontalNearClipCorrection = lastHorizontalNearClipCorrection;
                     }
-                    if (cameraPinHeight || std::abs(cameraVerticalAddend) > std::numeric_limits<float>::epsilon() || std::abs(cameraHorizontalAddend) > std::numeric_limits<float>::epsilon() || std::abs(cameraPitchAddend) > std::numeric_limits<float>::epsilon()) {
+                    if (cameraPinHeight || std::abs(cameraVerticalAddend) > fltTolerance || std::abs(cameraHorizontalAddend) > fltTolerance || std::abs(cameraPitchAddend) > fltTolerance) {
                         horizontalCameraCollisionCorrection = lastHorizontalCameraCollisionCorrection;
                         verticalCameraCollisionCorrection = lastVerticalCameraCollisionCorrection;
                     }

@@ -7,8 +7,10 @@
 #include <sstream>
 
 #include <Windows.h>
+#include <intrin.h>
 #include <d3d9.h>
 #include <d3dx9.h>
+
 #include "MinHook.h"
 
 #include "sceneBegin_sceneEnd.h"
@@ -292,7 +294,7 @@ bool scene_reloadFont() {
 
     {
         if (scene_fallback == NULL) {
-            if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_fallbackFontName).c_str(), &scene_fallback))) {
+            if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, PROOF_QUALITY, DEFAULT_PITCH | FF_DONTCARE, utf8_to_utf16(scene_fallbackFontName).c_str(), &scene_fallback))) {
                 scene_fallback = NULL;
                 scene_isEnabled = false;
                 scene_disableReason = u8"Failed to load the fallback font. This is usually due to an imcomplete installation of the Windows operating system.";
@@ -308,7 +310,7 @@ bool scene_reloadFont() {
         }
 
         if (scene_fallbackBIG == NULL) {
-            if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize + 15, 0, FW_BOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_fallbackFontName).c_str(), &scene_fallbackBIG))) {
+            if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize + 15, 0, FW_BOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, PROOF_QUALITY, DEFAULT_PITCH | FF_DONTCARE, utf8_to_utf16(scene_fallbackFontName).c_str(), &scene_fallbackBIG))) {
                 scene_fallbackBIG = NULL;
                 return false;
             }
@@ -316,7 +318,7 @@ bool scene_reloadFont() {
         }
 
         if (scene_fallbackSmall == NULL) {
-            if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize - 4, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_fallbackFontName).c_str(), &scene_fallbackSmall))) {
+            if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize - 4, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, PROOF_QUALITY, DEFAULT_PITCH | FF_DONTCARE, utf8_to_utf16(scene_fallbackFontName).c_str(), &scene_fallbackSmall))) {
                 scene_fallbackSmall = NULL;
                 return false;
             }
@@ -324,7 +326,7 @@ bool scene_reloadFont() {
         }
 
         if (scene_fallbackHUGE == NULL) {
-            if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize + 15, 0, FW_HEAVY, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_fallbackFontName).c_str(), &scene_fallbackHUGE))) {
+            if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize + 15, 0, FW_HEAVY, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, PROOF_QUALITY, DEFAULT_PITCH | FF_DONTCARE, utf8_to_utf16(scene_fallbackFontName).c_str(), &scene_fallbackHUGE))) {
                 scene_fallbackHUGE = NULL;
                 return false;
             }
@@ -334,9 +336,9 @@ bool scene_reloadFont() {
 
     {
         if (scene_selected == NULL) {
-            if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_userSelectedFontName).c_str(), &scene_selected))) {
+            if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, PROOF_QUALITY, DEFAULT_PITCH | FF_DONTCARE, utf8_to_utf16(scene_userSelectedFontName).c_str(), &scene_selected))) {
                 scene_userSelectedFontName = scene_fallbackFontName;
-                if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_userSelectedFontName).c_str(), &scene_selected))) {
+                if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, PROOF_QUALITY, DEFAULT_PITCH | FF_DONTCARE, utf8_to_utf16(scene_userSelectedFontName).c_str(), &scene_selected))) {
                     scene_selected = NULL;
                     return false;
                 }
@@ -345,7 +347,7 @@ bool scene_reloadFont() {
                 scene_selected->Release();
                 scene_selected = NULL;
                 scene_userSelectedFontName = scene_fallbackFontName;
-                if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_userSelectedFontName).c_str(), &scene_selected))) {
+                if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, PROOF_QUALITY, DEFAULT_PITCH | FF_DONTCARE, utf8_to_utf16(scene_userSelectedFontName).c_str(), &scene_selected))) {
                     scene_selected = NULL;
                     return false;
                 }
@@ -355,7 +357,7 @@ bool scene_reloadFont() {
         }
 
         if (scene_selectedBIG == NULL) {
-            if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize + 15, 0, FW_BOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_userSelectedFontName).c_str(), &scene_selectedBIG))) {
+            if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize + 15, 0, FW_BOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, PROOF_QUALITY, DEFAULT_PITCH | FF_DONTCARE, utf8_to_utf16(scene_userSelectedFontName).c_str(), &scene_selectedBIG))) {
                 scene_selectedBIG = NULL;
                 return false;
             }
@@ -363,7 +365,7 @@ bool scene_reloadFont() {
         }
 
         if (scene_selectedSmall == NULL) {
-            if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize - 4, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_userSelectedFontName).c_str(), &scene_selectedSmall))) {
+            if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize - 4, 0, FW_SEMIBOLD, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, PROOF_QUALITY, DEFAULT_PITCH | FF_DONTCARE, utf8_to_utf16(scene_userSelectedFontName).c_str(), &scene_selectedSmall))) {
                 scene_selectedSmall = NULL;
                 return false;
             }
@@ -371,7 +373,7 @@ bool scene_reloadFont() {
         }
 
         if (scene_selectedHUGE == NULL) {
-            if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize + 15, 0, FW_HEAVY, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH | FF_DONTCARE, utf8_to_utf16(scene_userSelectedFontName).c_str(), &scene_selectedHUGE))) {
+            if (false == SUCCEEDED(pD3DXCreateFontW(scene_lastDXdevice, scene_fontSize + 15, 0, FW_HEAVY, 1, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, PROOF_QUALITY, DEFAULT_PITCH | FF_DONTCARE, utf8_to_utf16(scene_userSelectedFontName).c_str(), &scene_selectedHUGE))) {
                 scene_selectedHUGE = NULL;
                 return false;
             }
@@ -382,8 +384,6 @@ bool scene_reloadFont() {
     scene_needReloadFont = false;
     return true;
 }
-
-
 
 SCENEBEGIN p_sceneBegin = reinterpret_cast<SCENEBEGIN>(0x5a1680);
 SCENEBEGIN p_original_sceneBegin = NULL;
@@ -423,7 +423,10 @@ void __fastcall detoured_sceneBegin(uint32_t CGxDevice, void* ignored, uint32_t 
         return;
     }
 
-    if (retAddress() == 0x5a1a27) {
+    uintptr_t ret = reinterpret_cast<uintptr_t>(_ReturnAddress());
+    retAddressCheck(ret);
+
+    if (ret == 0x5a1a27) {
         // We are at right after IDirect3DDevice9::Present()
         if (scene_needUnload) {
             scene_unload();
@@ -443,7 +446,7 @@ void __fastcall detoured_sceneBegin(uint32_t CGxDevice, void* ignored, uint32_t 
         return;
     }
 
-    if (retAddress() == 0x5a256d) {
+    if (ret == 0x5a256d) {
         // We are in CGxDeviceD3d::IStateSetD3DDefaults()
         if (scene_spriteOnLost) {
             scene_spriteOnResetDevice();
@@ -543,12 +546,8 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
             it++;
         }
 
-        scene_sprite->Begin(D3DXSPRITE_ALPHABLEND | D3DXSPRITE_SORT_TEXTURE);
+        scene_sprite->Begin(D3DXSPRITE_ALPHABLEND);
         {
-            scene_lastDXdevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
-            scene_lastDXdevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
-            scene_lastDXdevice->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
-
             for (auto it = smallFloatingTexts.begin(); it != smallFloatingTexts.end();) {
                 int update = -1;
                 if (it->m_serif) {
