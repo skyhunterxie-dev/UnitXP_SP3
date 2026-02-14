@@ -640,7 +640,7 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
 
     // In fact there are 2 paths could reach sceneEnd(). In theory we should check if we are at before IDirect3DDevice9::Present()
     // However nampower is also hooking into sceneEnd(), so we can't check RET address
-    // It seems fine. The other path seems never be called
+    // It seems fine
     FPScap();
 }
 

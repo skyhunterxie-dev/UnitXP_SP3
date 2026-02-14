@@ -142,12 +142,6 @@ static void cameraAddPitch(uint32_t camera, float delta) {
     vecForward.z += delta;
 
     if (vectorAlmostZero(vecForward)) {
-        //TODO DEBUG
-        static bool test = false;
-        if (test == false) {
-            MessageBoxW(NULL, utf8_to_utf16(u8"Forward vector is almost zero.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-            test = true;
-        }
         return;
     }
     vectorNormalize(vecForward);
