@@ -45,6 +45,11 @@ static int scene_delayDetouredSceneEnd = 2;
 int scene_inWorld = 0;
 bool scene_needUnload = false;
 
+// It is observed that when using software cursor, sceneEnd() would be called twice per frame
+// However as nampower is also hooking into sceneEnd(), so we can't check RET address
+// So we hook into gxDevice_scenePresent() which is right before the presenting sceneEnd() to toogle a flag
+static bool scene_isPresenting = false;
+
 LPDIRECT3DDEVICE9 scene_lastDXdevice = NULL;
 bool scene_needReloadFont = false;
 bool scene_fontsOnLost = false;
@@ -490,6 +495,14 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
         return;
     }
 
+    if (scene_isPresenting == false) {
+        p_original_sceneEnd(CGxDevice);
+        return;
+    }
+    else {
+        scene_isPresenting = false;
+    }
+
     if (scene_delayDetouredSceneEnd <= 0
         && *reinterpret_cast<uint32_t*>(CGxDevice + 0x3a38) != NULL
         && scene_isEnabled == true) {
@@ -638,9 +651,6 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
 
     p_original_sceneEnd(CGxDevice);
 
-    // In fact there are 2 paths could reach sceneEnd(). In theory we should check if we are at before IDirect3DDevice9::Present()
-    // However nampower is also hooking into sceneEnd(), so we can't check RET address
-    // It seems fine
     FPScap();
 }
 
@@ -862,6 +872,14 @@ void scene_onPlayerEnteringWorld() {
 void scene_onPlayerLeavingWorld() {
     scene_inWorld = 0;
     scene_needUnload = true;
+}
+
+GXDEVICESCENEPRESENT p_gxDevice_scenePresent = reinterpret_cast<GXDEVICESCENEPRESENT>(0x592430);
+GXDEVICESCENEPRESENT p_original_gxDevice_scenePresent = NULL;
+void __fastcall detoured_gxDevice_scenePresent(void* self, void* ignored, int unknown) {
+    p_original_gxDevice_scenePresent(self, unknown);
+    scene_isPresenting = true;
+    return;
 }
 
 std::string scene_debugText() {

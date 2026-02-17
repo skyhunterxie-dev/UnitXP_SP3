@@ -67,6 +67,11 @@ extern ISCENEEND p_sceneEnd;
 extern ISCENEEND p_original_sceneEnd;
 void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored);
 
+typedef void(__thiscall* GXDEVICESCENEPRESENT)(void*, int);
+extern GXDEVICESCENEPRESENT p_gxDevice_scenePresent;
+extern GXDEVICESCENEPRESENT p_original_gxDevice_scenePresent;
+void __fastcall detoured_gxDevice_scenePresent(void* self, void* ignored, int unknown);
+
 typedef void(__thiscall* RELEASED3DRESOURCES)(uint32_t, int);
 extern RELEASED3DRESOURCES p_releaseD3dResources;
 extern RELEASED3DRESOURCES p_original_releaseD3dResources;
