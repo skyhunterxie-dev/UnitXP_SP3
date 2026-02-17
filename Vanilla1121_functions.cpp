@@ -86,7 +86,7 @@ const float fltTolerance = 1e-5f;
 // To get lua_State pointer
 void* GetContext(void) {
     void* result = p_GetContext();
-    if (!result) {
+    if (result == NULL || (reinterpret_cast<uintptr_t>(result) & 1) != 0) {
         MessageBoxW(NULL, utf8_to_utf16(u8"Somehow, the Lua state is NULL. Game would crash soon.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
     }
     return result;
@@ -1122,7 +1122,7 @@ static std::string getModuleNameFromAddress(uintptr_t addr) {
     return "";
 }
 
-bool retAddressCheck(uintptr_t ret){
+bool retAddressCheck(uintptr_t ret) {
     static uintptr_t minText = 0;
     static uintptr_t maxText = 0;
 
@@ -1142,3 +1142,18 @@ bool retAddressCheck(uintptr_t ret){
     }
     return true;
 }
+
+void vanilla1121_enableGC(void* L) {
+    typedef void(__fastcall* ENABLEGC)(void*);
+    auto fun = reinterpret_cast<ENABLEGC>(0x6f43c0);
+    fun(L);
+    return;
+}
+
+void vanilla1121_disableGC(void* L) {
+    typedef void(__fastcall* DISABLEGC)(void*);
+    auto fun = reinterpret_cast<DISABLEGC>(0x6f43d0);
+    fun(L);
+    return;
+}
+

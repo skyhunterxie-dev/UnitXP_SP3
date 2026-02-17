@@ -143,6 +143,16 @@ int __fastcall detoured_UnitXP(void* L) {
                 lua_pushboolean(L, true);
                 return 1;
             }
+            if (subcmd == "PLAYER_REGEN_ENABLED") {
+                onPlayerRegenEnabled();
+                lua_pushboolean(L, true);
+                return 1;
+            }
+            if (subcmd == "PLAYER_REGEN_DISABLED") {
+                onPlayerRegenDisabled();
+                lua_pushboolean(L, true);
+                return 1;
+            }
             lua_pushnil(L);
             return 1;
         }

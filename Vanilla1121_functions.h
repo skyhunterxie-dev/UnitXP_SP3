@@ -277,3 +277,7 @@ extern std::mt19937 rnd;
 // Check if RET address is in the game or another mod
 bool retAddressCheck(uintptr_t ret);
 extern const float fltTolerance;
+// Enable Lua garbage collection
+void vanilla1121_enableGC(void* L);
+// Disable Lua garbage collection
+void vanilla1121_disableGC(void* L);
