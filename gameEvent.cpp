@@ -13,9 +13,9 @@ void onPlayerLeavingWorld() {
 }
 
 void onPlayerRegenDisabled() {
-    vanilla1121_disableGC(GetContext());
+
 }
 
 void onPlayerRegenEnabled() {
-    vanilla1121_enableGC(GetContext());
+
 }
