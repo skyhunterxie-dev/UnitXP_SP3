@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 
 #include <cmath>
 #include <map>
@@ -177,7 +177,10 @@ FUNTYPE_0x7be490 p_original_fun_0x7be490 = NULL;
 float* __fastcall detoured_fun_0x7be490(float* matA, float* vecB, float angle, bool skipVectorNormalization)
 {
     if (skipVectorNormalization == false) {
-        double sqrtResult = std::sqrt(std::pow(static_cast<double>(vecB[0]), 2.0) + std::pow(static_cast<double>(vecB[1]), 2.0) + std::pow(static_cast<double>(vecB[2]), 2.0));
+        double d0 = static_cast<double>(vecB[0]);
+        double d1 = static_cast<double>(vecB[1]);
+        double d2 = static_cast<double>(vecB[2]);
+        double sqrtResult = std::sqrt(d0 * d0 + d1 * d1 + d2 * d2);
         vecB[0] = static_cast<float>(vecB[0] / sqrtResult);
         vecB[1] = static_cast<float>(vecB[1] / sqrtResult);
         vecB[2] = static_cast<float>(vecB[2] / sqrtResult);
@@ -189,15 +192,15 @@ float* __fastcall detoured_fun_0x7be490(float* matA, float* vecB, float angle, b
     double rVecXZ = rcosResult * static_cast<double>(vecB[2]) * static_cast<double>(vecB[0]);
     double rVecYZ = rcosResult * static_cast<double>(vecB[2]) * static_cast<double>(vecB[1]);
 
-    matA[0] = static_cast<float>(std::pow(static_cast<double>(vecB[0]), 2.0) * rcosResult + cosResult);
+    matA[0] = static_cast<float>(static_cast<double>(vecB[0]) * static_cast<double>(vecB[0]) * rcosResult + cosResult);
     matA[1] = static_cast<float>(rVecXY + static_cast<double>(vecB[2]) * sinResult);
     matA[2] = static_cast<float>(rVecXZ - static_cast<double>(vecB[1]) * sinResult);
     matA[3] = static_cast<float>(rVecXY - static_cast<double>(vecB[2]) * sinResult);
-    matA[4] = static_cast<float>(std::pow(static_cast<double>(vecB[1]), 2.0) * rcosResult + cosResult);
+    matA[4] = static_cast<float>(static_cast<double>(vecB[1]) * static_cast<double>(vecB[1]) * rcosResult + cosResult);
     matA[5] = static_cast<float>(rVecYZ + static_cast<double>(vecB[0]) * sinResult);
     matA[6] = static_cast<float>(rVecXZ + static_cast<double>(vecB[1]) * sinResult);
     matA[7] = static_cast<float>(rVecYZ - static_cast<double>(vecB[0]) * sinResult);
-    matA[8] = static_cast<float>(std::pow(static_cast<double>(vecB[2]), 2.0) * rcosResult + cosResult);
+    matA[8] = static_cast<float>(static_cast<double>(vecB[2]) * static_cast<double>(vecB[2]) * rcosResult + cosResult);
 
     return matA;
 }
@@ -254,7 +257,7 @@ MATRIX_ROTATE_1 p_original_matrix_rotate_1 = NULL;
 float* __fastcall detoured_matrix_rotate_1(float* matA, float* vecB, float angle, bool skipVectorNormalization)
 {
     if (skipVectorNormalization == false) {
-        double sqrtResult = std::sqrt(std::pow(static_cast<double>(vecB[0]), 2.0) + std::pow(static_cast<double>(vecB[1]), 2.0) + std::pow(static_cast<double>(vecB[2]), 2.0));
+        double sqrtResult = std::sqrt(static_cast<double>(vecB[0]) * static_cast<double>(vecB[0]) + static_cast<double>(vecB[1]) * static_cast<double>(vecB[1]) + static_cast<double>(vecB[2]) * static_cast<double>(vecB[2]));
         vecB[0] = static_cast<float>(vecB[0] / sqrtResult);
         vecB[1] = static_cast<float>(vecB[1] / sqrtResult);
         vecB[2] = static_cast<float>(vecB[2] / sqrtResult);
@@ -264,17 +267,17 @@ float* __fastcall detoured_matrix_rotate_1(float* matA, float* vecB, float angle
     double sinResult = std::sin(static_cast<double>(angle));
     double rcosResult = 1.0 - cosResult;
 
-    matA[0] = static_cast<float>(std::pow(static_cast<double>(vecB[0]), 2.0) * rcosResult + cosResult);
+    matA[0] = static_cast<float>(static_cast<double>(vecB[0]) * static_cast<double>(vecB[0]) * rcosResult + cosResult);
     matA[1] = static_cast<float>(rcosResult * static_cast<double>(vecB[1]) * static_cast<double>(vecB[0]) + static_cast<double>(vecB[2]) * sinResult);
     matA[2] = static_cast<float>(rcosResult * static_cast<double>(vecB[2]) * static_cast<double>(vecB[0]) - static_cast<double>(vecB[1]) * sinResult);
     matA[3] = 0.0f;
     matA[4] = static_cast<float>(rcosResult * static_cast<double>(vecB[1]) * static_cast<double>(vecB[0]) - static_cast<double>(vecB[2]) * sinResult);
-    matA[5] = static_cast<float>(std::pow(static_cast<double>(vecB[1]), 2.0) * rcosResult + cosResult);
+    matA[5] = static_cast<float>(static_cast<double>(vecB[1]) * static_cast<double>(vecB[1]) * rcosResult + cosResult);
     matA[6] = static_cast<float>(static_cast<double>(vecB[0]) * sinResult + rcosResult * static_cast<double>(vecB[2]) * static_cast<double>(vecB[1]));
     matA[7] = 0.0f;
     matA[8] = static_cast<float>(rcosResult * static_cast<double>(vecB[2]) * static_cast<double>(vecB[0]) + static_cast<double>(vecB[1]) * sinResult);
     matA[9] = static_cast<float>(rcosResult * static_cast<double>(vecB[2]) * static_cast<double>(vecB[1]) - static_cast<double>(vecB[0]) * sinResult);
-    matA[0xa] = static_cast<float>(std::pow(static_cast<double>(vecB[2]), 2.0) * rcosResult + cosResult);
+    matA[0xa] = static_cast<float>(static_cast<double>(vecB[2]) * static_cast<double>(vecB[2]) * rcosResult + cosResult);
     matA[0xb] = 0.0f;
     matA[0xc] = 0.0f;
     matA[0xd] = 0.0f;
@@ -287,9 +290,10 @@ float* __fastcall detoured_matrix_rotate_1(float* matA, float* vecB, float angle
 SQUAREDMAGNITUDE p_squaredMagnitude = reinterpret_cast<SQUAREDMAGNITUDE>(0x4549f0);
 SQUAREDMAGNITUDE p_original_squaredMagnitude = NULL;
 double __fastcall detoured_squaredMagnitude(float* src) {
-    return std::pow(static_cast<double>(src[0]), 2)
-        + std::pow(static_cast<double>(src[1]), 2)
-        + std::pow(static_cast<double>(src[2]), 2);
+    double d0 = static_cast<double>(src[0]);
+    double d1 = static_cast<double>(src[1]);
+    double d2 = static_cast<double>(src[2]);
+    return d0 * d0 + d1 * d1 + d2 * d2;
 }
 
 CALPLANENORMAL p_calculatePlaneNormal = reinterpret_cast<CALPLANENORMAL>(0x637480);
@@ -300,7 +304,7 @@ void __fastcall detoured_calculatePlaneNormal(float* self, void* ignored, float*
     selfHD[1] = (static_cast<double>(p2[2]) - static_cast<double>(p1[2])) * (static_cast<double>(p3[0]) - static_cast<double>(p1[0])) - (static_cast<double>(p3[2]) - static_cast<double>(p1[2])) * (static_cast<double>(p2[0]) - static_cast<double>(p1[0]));
     selfHD[2] = (static_cast<double>(p3[1]) - static_cast<double>(p1[1])) * (static_cast<double>(p2[0]) - static_cast<double>(p1[0])) - (static_cast<double>(p2[1]) - static_cast<double>(p1[1])) * (static_cast<double>(p3[0]) - static_cast<double>(p1[0]));
 
-    double sqrtResult = std::sqrt(std::pow(selfHD[2], 2.0) + std::pow(selfHD[1], 2.0) + std::pow(selfHD[0], 2.0));
+    double sqrtResult = std::sqrt(selfHD[2] * selfHD[2] + selfHD[1] * selfHD[1] + selfHD[0] * selfHD[0]);
     self[0] = static_cast<float>(selfHD[0] / sqrtResult);
     self[1] = static_cast<float>(selfHD[1] / sqrtResult);
     self[2] = static_cast<float>(selfHD[2] / sqrtResult);
