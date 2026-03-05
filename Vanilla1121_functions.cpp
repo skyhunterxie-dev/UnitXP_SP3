@@ -883,7 +883,19 @@ uint32_t vanilla1121_worldFrame() {
     return *reinterpret_cast<uint32_t*>(0xb4b2bc);
 }
 
-// Thanks to Icesythe7 and boipus
+float vanilla1121_worldFrameBottomNDC() {
+    return *reinterpret_cast<float*>(vanilla1121_worldFrame() + 0x3a0);
+}
+
+float vanilla1121_worldFrameLeftNDC() {
+    return *reinterpret_cast<float*>(vanilla1121_worldFrame() + 0x3a4);
+}
+
+/*
+* Original implementation thanks to Icesythe7 and boipus
+* To address https://codeberg.org/konaka/UnitXP_SP3/issues/27
+* adjusted geometric origin of the game window
+*/
 C3Vector vanilla1121_worldToScreen(C3Vector& world) {
     typedef bool(__thiscall* WORLDTOSCREEN)(uint32_t, float*, float*);
     auto p_worldToScreen = reinterpret_cast<WORLDTOSCREEN>(0x483ee0);
@@ -892,16 +904,16 @@ C3Vector vanilla1121_worldToScreen(C3Vector& world) {
     auto p_DDC_to_NDC = reinterpret_cast<DDCTONDC>(0x41ade0);
 
     C3Vector result = {};
-    RECT gameWindowRect = {};
+    RECT gameWindowRect = vanilla1121_gameClientRect();
 
-    if (p_worldToScreen(vanilla1121_worldFrame(), &world.x, &result.x) && GetClientRect(vanilla1121_gameWindow(), &gameWindowRect)) {
+    if (p_worldToScreen(vanilla1121_worldFrame(), &world.x, &result.x)) {
         float x = -1.0f;
         float y = -1.0f;
         p_DDC_to_NDC(&x, &y, result.x, result.y);
         int width = gameWindowRect.right - gameWindowRect.left;
         int height = gameWindowRect.bottom - gameWindowRect.top;
-        result.x = (x * width);
-        result.y = height - (y * height);
+        result.x = (vanilla1121_worldFrameLeftNDC() * width) + (x * width);
+        result.y = height - (y * height) - (vanilla1121_worldFrameBottomNDC() * height);
 
         return result;
     }
