@@ -17,7 +17,8 @@
 * when it starts. So the original design is flipped. Replace them with std::memcpy and compile the mod with a modern compiler
 * should fix it.
 * 
-* Some patches are from libSiliconPatch.
+* As of libSiliconPatch 2.40, it implemented more/better polyfills.
+* It would be better to just use libSiliconPatch.
 */
 
 extern uint64_t polyfill_debugCounter;
@@ -27,6 +28,7 @@ extern bool ERMS;
 extern bool SSE2;
 void polyfill_checkCPU();
 
+/*
 typedef float* (__fastcall* OPERATOR_MULTIPLY_1)(float*, float*, float*);
 extern OPERATOR_MULTIPLY_1 p_operator_multiply_1;
 extern OPERATOR_MULTIPLY_1 p_original_operator_multiply_1;
@@ -104,6 +106,7 @@ typedef void(__fastcall* TRANSFORMAABOX)(float*, float*, float*, float*, float*)
 extern TRANSFORMAABOX p_transformAABox;
 extern TRANSFORMAABOX p_original_transformAABox;
 void __fastcall detoured_transformAABox(float* C33Mat, float* C3Vec_A, float* C3Vec_B, float* CAAbox_A, float* CAAbox_B);
+*/
 
 typedef int(__fastcall* LUA_SQRT)(void*);
 extern LUA_SQRT p_lua_sqrt;
@@ -115,6 +118,7 @@ extern BLIT_HUB p_blit_hub;
 extern BLIT_HUB p_original_blit_hub;
 void __fastcall detoured_blit_hub(int* vec2size, int unknownFuncIndex, uint32_t srcAddr, uint32_t srcStep, int srcFormat, uint32_t dstAddr, uint32_t dstStep, int dstFormat);
 
+/*
 typedef float* (__fastcall* CROSSPRODUCT)(float*, float*, float*);
 extern CROSSPRODUCT p_crossProduct;
 extern CROSSPRODUCT p_original_crossProduct;
@@ -129,13 +133,16 @@ typedef double(__fastcall* EVALUATEPOLYNOMIAL)(uint32_t, float*, float);
 extern EVALUATEPOLYNOMIAL p_evaluatePolynomial;
 extern EVALUATEPOLYNOMIAL p_original_evaluatePolynomial;
 double __fastcall detoured_evaluatePolynomial(uint32_t count, float* coefficients, float factor);
+*/
 
 typedef void(WINAPI* ENTERCRITICALSECTION)(LPCRITICAL_SECTION);
 extern ENTERCRITICALSECTION p_enterCriticalSection;
 extern ENTERCRITICALSECTION p_original_enterCriticalSection;
 void WINAPI detoured_enterCriticalSection(LPCRITICAL_SECTION objPtr);
 
+/*
 typedef uint16_t(__fastcall* FUNTYPE_0x7c29f0)(float*, uint32_t, uint16_t*, float*, float*, float);
 extern FUNTYPE_0x7c29f0 p_fun_0x7c29f0;
 extern FUNTYPE_0x7c29f0 p_original_fun_0x7c29f0;
 uint16_t __fastcall detoured_fun_0x7c29f0(float* ray_data, uint32_t vertex_base, uint16_t* indices, float* out_distance, float* out_uv, float tolerance);
+*/

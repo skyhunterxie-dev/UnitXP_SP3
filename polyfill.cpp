@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 #include <cmath>
 #include <map>
@@ -30,6 +30,8 @@ void polyfill_checkCPU() {
     SSE2 = (cpuInfo[3] & (1 << 26)) != 0;
 }
 
+/*
+* libSiliconPatch has this, disable it in xp3 in favor of libSiliconPatch
 OPERATOR_MULTIPLY_1 p_operator_multiply_1 = reinterpret_cast<OPERATOR_MULTIPLY_1>(0x7bca80);
 OPERATOR_MULTIPLY_1 p_original_operator_multiply_1 = NULL;
 float* __fastcall detoured_operator_multiply_1(float* vecResult, float* vecA, float* matB)
@@ -85,32 +87,31 @@ float* __fastcall detoured_operator_multiply_4(float* matA, float* matB, float* 
     return matA;
 }
 
-/* Seems not used
-* typedef float* (__fastcall* OPERATOR_MULTIPLY_5)(float*, float*, float*);
-OPERATOR_MULTIPLY_5 p_operator_multiply_5 = reinterpret_cast<OPERATOR_MULTIPLY_5>(0x7bae60);
-OPERATOR_MULTIPLY_5 p_original_operator_multiply_5 = NULL;
-float* __fastcall detoured_operator_multiply_5(float* matA, float* matB, float* matC)
-{
-    if (false == enableX87polyfill) {
-        return p_original_operator_multiply_5(matA, matB, matC);
-    }
-    // not tested
-    matA[1] = matB[2] * matC[7] + matB[1] * matC[4] + matC[1] * matB[0];
-    matA[2] = matB[1] * matC[5] + matB[2] * matC[8] + matB[0] * matC[2];
-    matA[3] = matC[6] * matB[5] + matC[3] * matB[4] + matB[3] * matC[0];
-    matA[0] = matB[0] * matC[0] + matB[2] * matC[6] + matB[1] * matC[3];
-    matA[4] = matB[3] * matC[1] + matB[5] * matC[7] + matB[4] * matC[4];
-    matA[6] = matB[6] * matC[0] + matC[6] * matB[8] + matC[3] * matB[7];
-    matA[5] = matC[8] * matB[5] + matB[3] * matC[2] + matB[4] * matC[5];
-    matA[7] = matB[8] * matC[7] + matB[7] * matC[4] + matB[6] * matC[1];
-    matA[8] = matB[8] * matC[8] + matB[6] * matC[2] + matB[7] * matC[5];
-    matA[9] = matC[6] * matB[11] + matB[10] * matC[3] + matB[9] * matC[0] + matC[9];
-    matA[10] = matB[10] * matC[4] + matB[9] * matC[1] + matB[11] * matC[7] + matC[10];
-    matA[11] = matB[10] * matC[5] + matB[9] * matC[2] + matC[8] * matB[11] + matC[11];
-
-    return matA;
-}
-*/
+// Seems not used
+//typedef float* (__fastcall* OPERATOR_MULTIPLY_5)(float*, float*, float*);
+//OPERATOR_MULTIPLY_5 p_operator_multiply_5 = reinterpret_cast<OPERATOR_MULTIPLY_5>(0x7bae60);
+//OPERATOR_MULTIPLY_5 p_original_operator_multiply_5 = NULL;
+//float* __fastcall detoured_operator_multiply_5(float* matA, float* matB, float* matC)
+//{
+//    if (false == enableX87polyfill) {
+//        return p_original_operator_multiply_5(matA, matB, matC);
+//    }
+//    // not tested
+//    matA[1] = matB[2] * matC[7] + matB[1] * matC[4] + matC[1] * matB[0];
+//    matA[2] = matB[1] * matC[5] + matB[2] * matC[8] + matB[0] * matC[2];
+//    matA[3] = matC[6] * matB[5] + matC[3] * matB[4] + matB[3] * matC[0];
+//    matA[0] = matB[0] * matC[0] + matB[2] * matC[6] + matB[1] * matC[3];
+//    matA[4] = matB[3] * matC[1] + matB[5] * matC[7] + matB[4] * matC[4];
+//    matA[6] = matB[6] * matC[0] + matC[6] * matB[8] + matC[3] * matB[7];
+//    matA[5] = matC[8] * matB[5] + matB[3] * matC[2] + matB[4] * matC[5];
+//    matA[7] = matB[8] * matC[7] + matB[7] * matC[4] + matB[6] * matC[1];
+//    matA[8] = matB[8] * matC[8] + matB[6] * matC[2] + matB[7] * matC[5];
+//    matA[9] = matC[6] * matB[11] + matB[10] * matC[3] + matB[9] * matC[0] + matC[9];
+//    matA[10] = matB[10] * matC[4] + matB[9] * matC[1] + matB[11] * matC[7] + matC[10];
+//    matA[11] = matB[10] * matC[5] + matB[9] * matC[2] + matC[8] * matB[11] + matC[11];
+//
+//    return matA;
+//}
 
 OPERATOR_MULTIPLY_6 p_operator_multiply_6 = reinterpret_cast<OPERATOR_MULTIPLY_6>(0x5f8cf0);
 OPERATOR_MULTIPLY_6 p_original_operator_multiply_6 = NULL;
@@ -220,37 +221,36 @@ float* __fastcall detoured_fun_0x7bdfc0(float* matSelf, float* matA, float* matB
     return matSelf;
 }
 
-/* Seems not used
-* typedef float* (__thiscall* FUNTYPE_0x7bf860)(float*, float*, float*, float*);
-FUNTYPE_0x7bf860 p_fun_0x7bf860 = reinterpret_cast<FUNTYPE_0x7bf860>(0x7bf860);
-FUNTYPE_0x7bf860 p_original_fun_0x7bf860 = NULL;
-float* __fastcall detoured_fun_0x7bf860(float* matSelf, void* ignored, float* vecB, float* vecC, float* vecD)
-{
-    if (false == enableX87polyfill) {
-        return p_original_fun_0x7bf860(matSelf, vecB, vecC, vecD);
-    }
-    // not tested
-    float rsqrtResult = 1.0f / vectorLength(matSelf);
-    matSelf[0] = (vecC[1] - vecB[1]) * (vecD[2] - vecB[2]) - (vecC[2] - vecB[2]) * (vecD[1] - vecB[1]);
-    matSelf[0] *= rsqrtResult;
-    matSelf[1] = (vecD[0] - vecB[0]) * (vecC[2] - vecB[2]) - (vecC[0] - vecB[0]) * (vecD[2] - vecB[2]);
-    matSelf[1] *= rsqrtResult;
-    matSelf[2] = (vecC[0] - vecB[0]) * (vecD[1] - vecB[1]) - (vecD[0] - vecB[0]) * (vecC[1] - vecB[1]);
-    matSelf[2] *= rsqrtResult;
-    matSelf[3] = -(matSelf[0] * vecB[0] + matSelf[1] * vecB[1] + matSelf[2] * vecB[2]);
-    matSelf[3] *= rsqrtResult;
-    matSelf[4] = vecB[0];
-    matSelf[5] = vecB[1];
-    matSelf[6] = vecB[2];
-    matSelf[7] = vecC[0];
-    matSelf[8] = vecC[1];
-    matSelf[9] = vecC[2];
-    matSelf[10] = vecD[0];
-    matSelf[0xb] = vecD[1];
-    matSelf[0xc] = vecD[2];
-    return matSelf;
-}
-*/
+// Seems not used
+//typedef float* (__thiscall* FUNTYPE_0x7bf860)(float*, float*, float*, float*);
+//FUNTYPE_0x7bf860 p_fun_0x7bf860 = reinterpret_cast<FUNTYPE_0x7bf860>(0x7bf860);
+//FUNTYPE_0x7bf860 p_original_fun_0x7bf860 = NULL;
+//float* __fastcall detoured_fun_0x7bf860(float* matSelf, void* ignored, float* vecB, float* vecC, float* vecD)
+//{
+//    if (false == enableX87polyfill) {
+//        return p_original_fun_0x7bf860(matSelf, vecB, vecC, vecD);
+//    }
+//    // not tested
+//    float rsqrtResult = 1.0f / vectorLength(matSelf);
+//    matSelf[0] = (vecC[1] - vecB[1]) * (vecD[2] - vecB[2]) - (vecC[2] - vecB[2]) * (vecD[1] - vecB[1]);
+//    matSelf[0] *= rsqrtResult;
+//    matSelf[1] = (vecD[0] - vecB[0]) * (vecC[2] - vecB[2]) - (vecC[0] - vecB[0]) * (vecD[2] - vecB[2]);
+//    matSelf[1] *= rsqrtResult;
+//    matSelf[2] = (vecC[0] - vecB[0]) * (vecD[1] - vecB[1]) - (vecD[0] - vecB[0]) * (vecC[1] - vecB[1]);
+//    matSelf[2] *= rsqrtResult;
+//    matSelf[3] = -(matSelf[0] * vecB[0] + matSelf[1] * vecB[1] + matSelf[2] * vecB[2]);
+//    matSelf[3] *= rsqrtResult;
+//    matSelf[4] = vecB[0];
+//    matSelf[5] = vecB[1];
+//    matSelf[6] = vecB[2];
+//    matSelf[7] = vecC[0];
+//    matSelf[8] = vecC[1];
+//    matSelf[9] = vecC[2];
+//    matSelf[10] = vecD[0];
+//    matSelf[0xb] = vecD[1];
+//    matSelf[0xc] = vecD[2];
+//    return matSelf;
+//}
 
 MATRIX_ROTATE_1 p_matrix_rotate_1 = reinterpret_cast<MATRIX_ROTATE_1>(0x7bdb00);
 MATRIX_ROTATE_1 p_original_matrix_rotate_1 = NULL;
@@ -336,6 +336,7 @@ void __fastcall detoured_transformAABox(float* C33Mat, float* C3Vec_A, float* C3
 
     return;
 }
+*/
 
 LUA_SQRT p_lua_sqrt = reinterpret_cast<LUA_SQRT>(0x7fb020);
 LUA_SQRT p_original_lua_sqrt = NULL;
@@ -450,6 +451,8 @@ std::string getPolyfillDebug() {
     return ss.str();
 }
 
+/*
+* libSiliconPatch has this, disable it in xp3 in favor of libSiliconPatch
 CROSSPRODUCT p_crossProduct = reinterpret_cast<CROSSPRODUCT>(0x672130);
 CROSSPRODUCT p_original_crossProduct = NULL;
 float* __fastcall detoured_crossProduct(float* result, float* vecA, float* vecB) {
@@ -474,6 +477,7 @@ double __fastcall detoured_evaluatePolynomial(uint32_t count, float* coefficient
     }
     return result;
 }
+*/
 
 static const DWORD criticalSectionSpin = 4000;
 ENTERCRITICALSECTION p_enterCriticalSection = NULL;
@@ -485,6 +489,7 @@ void WINAPI detoured_enterCriticalSection(LPCRITICAL_SECTION objPtr) {
     p_original_enterCriticalSection(objPtr);
 }
 
+/* libSiliconPatch has this, disable it in xp3 in favor of libSiliconPatch
 // This patch is contributed by akamizu. It was originaly found on Mac.
 // Thank you akamizu!
 FUNTYPE_0x7c29f0 p_fun_0x7c29f0 = reinterpret_cast<FUNTYPE_0x7c29f0>(0x7c29f0);
@@ -547,3 +552,4 @@ uint16_t __fastcall detoured_fun_0x7c29f0(float* ray_data, uint32_t vertex_base,
 
     return 1;
 }
+*/

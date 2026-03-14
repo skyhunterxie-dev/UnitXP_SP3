@@ -17,10 +17,12 @@ static bool quickACK_failed = false;
 static bool smallerMTU_failed = false;
 static bool biggerWindow_failed = false;
 
+/*
+* While the later version of the game do this, I can't find a way to prove it is helping in 1.12 nor for everyone
+* Disable it for now
 static void setFixedReceivingWindow(SOCKET s) {
     // The reason behind this function is that Windows TCP auto-tuning determines TCP window size by application retrieve rate. (and BDP)
     // I have a suspection of the game's data retrieving pattern is not well fit into Windows auto-tuning,
-    // because @pepopo report he witness exceptional good FPS on a local server.
 
     // And it seems later version of the game is also tuning it manually.
     
@@ -33,6 +35,7 @@ static void setFixedReceivingWindow(SOCKET s) {
         biggerWindow_failed = true;
     }
 }
+*/
 
 static void enableQuickACK(SOCKET s) {
     // From https://cygwin.com/git/?p=newlib-cygwin.git;a=commitdiff;h=ee2292413792f0360d357bc200c5e947eae516e6
@@ -69,7 +72,7 @@ int WSAAPI detoured_connect(SOCKET s, const struct sockaddr FAR* addr, int len) 
             sInfo.iProtocol == IPPROTO_TCP) {
 
             setSmallerMTU(s);
-            setFixedReceivingWindow(s);
+            // setFixedReceivingWindow(s);
             enableQuickACK(s);
         }
     }

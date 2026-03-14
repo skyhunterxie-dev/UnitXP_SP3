@@ -705,6 +705,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for weather_setType function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
         }
+        /* libSiliconPatch has this, disable it in xp3 in favor of libSiliconPatch
         if (MH_CreateHook(p_operator_multiply_1, &detoured_operator_multiply_1, reinterpret_cast<LPVOID*>(&p_original_operator_multiply_1)) != MH_OK) {
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for operator_multiply_1 function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
@@ -757,6 +758,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for transformAABox function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
         }
+        */
         if (MH_CreateHook(p_lua_sqrt, &detoured_lua_sqrt, reinterpret_cast<LPVOID*>(&p_original_lua_sqrt)) != MH_OK) {
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for lua_sqrt function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
@@ -767,6 +769,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
                 return FALSE;
             }
         }
+        /* libSiliconPatch has this, disable it in xp3 in favor of libSiliconPatch
         if (MH_CreateHook(p_squaredMagnitude, &detoured_squaredMagnitude, reinterpret_cast<LPVOID*>(&p_original_squaredMagnitude)) != MH_OK) {
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for squaredMagnitude function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
@@ -787,6 +790,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for evaluatePolynomial function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
         }
+        */
         if (MH_CreateHookApiEx(L"KERNEL32.DLL", "EnterCriticalSection", &detoured_enterCriticalSection, reinterpret_cast<LPVOID*>(&p_original_enterCriticalSection), reinterpret_cast<LPVOID*>(&p_enterCriticalSection)) != MH_OK) {
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for EnterCriticalSection function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
@@ -803,10 +807,12 @@ BOOL APIENTRY DllMain(HMODULE hModule,
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for sceneBegin function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
         }
+        /* libSiliconPatch has this, disable it in xp3 in favor of libSiliconPatch
         if (MH_CreateHook(p_fun_0x7c29f0, &detoured_fun_0x7c29f0, reinterpret_cast<LPVOID*>(&p_original_fun_0x7c29f0)) != MH_OK) {
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for fun_0x7c29f0 function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
         }
+        */
         if (MH_CreateHook(p_releaseD3dResources, &detoured_releaseD3dResources, reinterpret_cast<LPVOID*>(&p_original_releaseD3dResources)) != MH_OK) {
             MessageBoxW(NULL, utf8_to_utf16(u8"Failed to create hook for releaseD3dResources function.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
             return FALSE;
@@ -839,10 +845,12 @@ BOOL APIENTRY DllMain(HMODULE hModule,
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for releaseD3dResources function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
             }
+            /* libSiliconPatch has this, disable it in xp3 in favor of libSiliconPatch
             if (MH_RemoveHook(p_fun_0x7c29f0) != MH_OK) {
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for fun_0x7c29f0 function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
             }
+            */
             if (MH_RemoveHook(p_sceneBegin) != MH_OK) {
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for sceneBegin function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
@@ -859,6 +867,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for EnterCriticalSection function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
             }
+            /* libSiliconPatch has this, disable it in xp3 in favor of libSiliconPatch
             if (MH_RemoveHook(p_evaluatePolynomial) != MH_OK) {
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for dotProduct function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
@@ -879,6 +888,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for squaredMagnitude function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
             }
+            */
             if (ERMS) {
                 if (MH_RemoveHook(p_blit_hub) != MH_OK) {
                     MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for blit_hub function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
@@ -889,6 +899,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for lua_sqrt function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
             }
+            /* libSiliconPatch has this, disable it in xp3 in favor of libSiliconPatch
             if (MH_RemoveHook(p_transformAABox) != MH_OK) {
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for transformAABox function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
@@ -941,6 +952,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for operator_multiply_1 function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
             }
+            */
             if (MH_RemoveHook(p_weather_setType) != MH_OK) {
                 MessageBoxW(NULL, utf8_to_utf16(u8"Failed when to remove hook for weather_setType function. Game might crash later.").data(), utf8_to_utf16(u8"UnitXP Service Pack 3").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
                 return FALSE;
