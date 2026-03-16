@@ -4,8 +4,14 @@ CXX      = clang-cl
 LD       = lld-link
 
 # --- Dependencies ---
+# https://github.com/Jake-Shadle/xwin
 XWIN_ROOT       = ./xwinSDK
+
+# https://github.com/TsudaKageyu/minhook
 MINHOOK_DIR     = ./MinHook_134/src
+
+# Modern Windows SDK no longer has D3DX9 headers
+# Grab them from elder Windows SDK or DirectX 9 SDK
 D3DX_INCLUDES   = ./d3d9x_headers
 
 # --- Project Files ---
