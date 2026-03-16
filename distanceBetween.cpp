@@ -1,6 +1,4 @@
-﻿#include "pch.h"
-
-#include <string>
+﻿#include <string>
 #include <sstream>
 
 #include "distanceBetween.h"

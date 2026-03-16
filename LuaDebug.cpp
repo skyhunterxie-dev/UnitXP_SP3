@@ -1,6 +1,4 @@
-﻿#include "pch.h"
-
-#pragma comment(lib, "Ws2_32.lib")
+﻿#pragma comment(lib, "ws2_32.lib")
 
 #include <WinSock2.h>
 #include <ws2tcpip.h>
@@ -175,7 +173,7 @@ void __fastcall LuaDebug_hook(void* L, lua_Debug* active_record) {
                 continue;
             }
             if (cmd == "get stack item short_src") {
-                if (current_stack_item && current_stack_item->short_src) {
+                if (current_stack_item) {
                     LuaDebug_sendString(current_stack_item->short_src);
                 }
                 else {

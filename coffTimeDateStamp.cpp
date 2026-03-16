@@ -1,13 +1,11 @@
-﻿#include "pch.h"
-
-#include <cstdint>
+﻿#include <cstdint>
 
 #include <Windows.h>
 #include <psapi.h>
 
 #include "coffTimeDateStamp.h"
 
-#pragma comment(lib, "Psapi.lib")
+#pragma comment(lib, "psapi.lib")
 
 double coffTimeDateStamp() {
     MODULEINFO info = {};

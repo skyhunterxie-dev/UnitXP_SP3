@@ -1,7 +1,4 @@
 ﻿// dllmain.cpp : Defines the entry point for the DLL application.
-#include "pch.h"
-
-#pragma comment(lib, "libMinHook.x86.lib")
 
 #define _USE_MATH_DEFINES
 

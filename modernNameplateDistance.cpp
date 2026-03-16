@@ -1,6 +1,4 @@
-﻿#include "pch.h"
-
-#include "Vanilla1121_functions.h"
+﻿#include "Vanilla1121_functions.h"
 #include "modernNameplateDistance.h"
 #include "inSight.h"
 #include "distanceBetween.h"

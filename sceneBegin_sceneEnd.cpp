@@ -1,8 +1,4 @@
-﻿#include "pch.h"
-
-// This file requires to be saved in UTF-8 BOM, as it includes Chinese strings
-
-#pragma comment(lib, "libMinHook.x86.lib")
+﻿// This file requires to be saved in UTF-8 BOM, as it includes Chinese strings
 
 #include <sstream>
 

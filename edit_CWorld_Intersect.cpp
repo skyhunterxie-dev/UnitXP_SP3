@@ -1,5 +1,3 @@
-#include "pch.h"
-
 #include <Windows.h>
 
 #include "edit_CWorld_Intersect.h"

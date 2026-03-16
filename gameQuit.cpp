@@ -1,6 +1,4 @@
-﻿#include "pch.h"
-
-#include "gameQuit.h"
+﻿#include "gameQuit.h"
 #include "timer.h"
 #include "LuaDebug.h"
 #include "sceneBegin_sceneEnd.h"

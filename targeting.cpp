@@ -1,6 +1,4 @@
-﻿#include "pch.h"
-
-#include <vector>
+﻿#include <vector>
 #include <algorithm>
 #include <limits>
 

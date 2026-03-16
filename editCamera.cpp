@@ -1,6 +1,4 @@
-﻿#include "pch.h"
-
-#include <Windows.h>
+﻿#include <Windows.h>
 
 #include <algorithm>
 #include <cmath>

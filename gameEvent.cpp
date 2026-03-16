@@ -1,6 +1,4 @@
-﻿#include "pch.h"
-
-#include "gameEvent.h"
+﻿#include "gameEvent.h"
 #include "sceneBegin_sceneEnd.h"
 #include "Vanilla1121_functions.h"
 

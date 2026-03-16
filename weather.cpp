@@ -1,5 +1,3 @@
-#include "pch.h"
-
 #include "weather.h"
 
 WEATHER_SETTYPE p_weather_setType = reinterpret_cast<WEATHER_SETTYPE>(0x67baf0);

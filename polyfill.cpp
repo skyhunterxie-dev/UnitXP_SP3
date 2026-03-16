@@ -1,6 +1,4 @@
-﻿#include "pch.h"
-
-#include <cmath>
+﻿#include <cmath>
 #include <map>
 #include <tuple>
 
@@ -387,8 +385,8 @@ static void blit_withPitch(int w, int h, uint32_t src, uint32_t srcPitch, uint32
 
 static std::map<std::tuple<int, int, int>, uint64_t> blitCounters{};
 
-extern BLIT_HUB p_blit_hub = reinterpret_cast<BLIT_HUB>(0x5a4f60);
-extern BLIT_HUB p_original_blit_hub = NULL;
+BLIT_HUB p_blit_hub = reinterpret_cast<BLIT_HUB>(0x5a4f60);
+BLIT_HUB p_original_blit_hub = NULL;
 void __fastcall detoured_blit_hub(int* vec2size, int unknownFuncIndex, uint32_t srcAddr, uint32_t srcStep, int srcFormat, uint32_t dstAddr, uint32_t dstStep, int dstFormat) {
     int* gameBlitInitialized = reinterpret_cast<int*>(0xc0f558);
     if (0 == *gameBlitInitialized) {

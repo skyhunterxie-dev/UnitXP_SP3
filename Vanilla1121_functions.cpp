@@ -1,6 +1,4 @@
-﻿#include "pch.h"
-
-#define _USE_MATH_DEFINES
+﻿#define _USE_MATH_DEFINES
 
 #include <cmath>
 #include <sstream>
@@ -738,7 +736,7 @@ void vanilla1121_runScript(std::string luaScript) {
     lua_remove(L, 1);
 }
 
-float vectorLength(C3Vector& vec) {
+float vectorLength(const C3Vector& vec) {
     return std::sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
 }
 

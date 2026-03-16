@@ -1,6 +1,4 @@
-﻿#include "pch.h"
-
-#pragma comment(lib, "Winmm.lib")
+﻿#pragma comment(lib, "winmm.lib")
 
 #include <Windows.h>
 #include <timeapi.h>

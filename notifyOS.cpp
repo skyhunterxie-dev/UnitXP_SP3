@@ -1,6 +1,4 @@
-﻿#include "pch.h"
-
-#pragma comment(lib, "Winmm.lib")
+﻿#pragma comment(lib, "winmm.lib")
 
 #include <string>
 
@@ -9,7 +7,7 @@ using namespace std;
 #include "Windows.h"
 #include "winuser.h"
 #include "processthreadsapi.h"
-#include "Mmsystem.h"
+#include "mmsystem.h"
 
 #include "utf8_to_utf16.h"
 #include "Vanilla1121_functions.h"

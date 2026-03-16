@@ -240,7 +240,7 @@ uint32_t vanilla1121_unitCMovement(uint32_t unit);
 uint32_t vanilla1121_gameTick();
 // The collision box is not exactly same size as on-display.
 float vanilla1121_unitCollisionBoxHeight(uint32_t unit);
-float vectorLength(C3Vector& vec);
+float vectorLength(const C3Vector& vec);
 C3Vector vectorCrossProduct(const C3Vector& a, const C3Vector& b);
 float vectorDotProduct(const C3Vector& a, const C3Vector& b);
 C3Vector vectorSubtract(const C3Vector& a, const C3Vector& b);

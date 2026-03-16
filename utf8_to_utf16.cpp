@@ -1,6 +1,4 @@
-﻿#include "pch.h"
-
-#include <cstdlib>
+﻿#include <cstdlib>
 #include <string>
 
 #include <Windows.h>
@@ -82,7 +80,7 @@ void utf8_reloadRenderRanges(void* d3dxFont) {
 
     DWORD size = GetFontUnicodeRanges(font->GetDC(), NULL);
     // This comparison is to hint static analyzer that there isn't buffer overrun on renderRanges
-    if (size < sizeof GLYPHSET) {
+    if (size < sizeof(GLYPHSET)) {
         return;
     }
     renderRanges = reinterpret_cast<LPGLYPHSET>(std::malloc(size));
