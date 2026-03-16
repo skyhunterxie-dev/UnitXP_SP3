@@ -8,7 +8,7 @@ LD       = lld-link
 XWIN_ROOT       = ./xwinSDK
 
 # https://github.com/TsudaKageyu/minhook
-MINHOOK_DIR     = ./MinHook_134/src
+MINHOOK_DIR     = ./MinHook_134
 
 # Modern Windows SDK no longer has D3DX9 headers
 # Grab them from elder Windows SDK or DirectX 9 SDK
@@ -41,10 +41,10 @@ SRCS     =  \
             Vanilla1121_functions.cpp \
             weather.cpp \
             worldText.cpp \
-            $(MINHOOK_DIR)/buffer.c \
-            $(MINHOOK_DIR)/hde/hde32.c \
-            $(MINHOOK_DIR)/hook.c \
-            $(MINHOOK_DIR)/trampoline.c
+            $(MINHOOK_DIR)/src/buffer.c \
+            $(MINHOOK_DIR)/src/hde/hde32.c \
+            $(MINHOOK_DIR)/src/hook.c \
+            $(MINHOOK_DIR)/src/trampoline.c
 
 OBJS = $(patsubst %.cpp,%.obj,$(patsubst %.c,%.obj,$(SRCS)))
 LIBS     = user32.lib kernel32.lib gdi32.lib libcmt.lib
@@ -60,6 +60,7 @@ CXXFLAGS = --target=$(TRIPLE) /O2 /MT /EHsc /W3 -Wno-microsoft-cast -Wno-unused-
            -imsvc "$(XWIN_ROOT)/sdk/include/ucrt" \
            -imsvc "$(XWIN_ROOT)/sdk/include/um" \
            -imsvc "$(XWIN_ROOT)/sdk/include/shared" \
+           -imsvc "$(MINHOOK_DIR)/include" \
            -imsvc "$(D3DX_INCLUDES)"
 
 LDFLAGS  = /NOLOGO /DLL /MACHINE:X86 /FUNCTIONPADMIN /OPT:REF /OPT:ICF \
