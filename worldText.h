@@ -97,5 +97,6 @@ namespace worldText {
         int m_floatingDistance;
         int m_width;
         int m_height;
+        DWORD m_drawFormat;
     };
 }

@@ -186,6 +186,7 @@ worldText::Crit::Crit(std::string text, uint64_t stickToGUID, int r, int g, int 
     m_alpha = 1.0;
     m_alpha_forHugeFont = 0.0;
     m_timingPrecision.QuadPart = getPerformanceCounterFrequency().QuadPart / animationFPS;
+    m_drawFormat = DT_LEFT;
 
     QueryPerformanceCounter(&m_startTime);
 
@@ -267,26 +268,32 @@ int worldText::Crit::update(ID3DXFont* fontNormal, ID3DXFont* fontBig, ID3DXFont
     double elapsed = static_cast<double>((now.QuadPart - m_startTime.QuadPart) / m_timingPrecision.QuadPart);
     double totalFrameCount = m_totalTime * animationFPS;
 
-    if (elapsed < 0.1 * animationFPS) {
+    if (elapsed < 0.2 * animationFPS) {
         m_fontDraw = m_fontNormal;
-        m_alpha = 1.0;
+        m_drawFormat = DT_CENTER | DT_VCENTER;
         m_alpha_forHugeFont = 0.0;
-    }
-    else if (elapsed < 0.3 * animationFPS) {
-        m_fontDraw = m_fontBig;
-        m_alpha = 1.0;
-
-        m_alpha_forHugeFont = 1.0 - (elapsed - 0.1 * animationFPS) / (0.2 * animationFPS);
+        m_alpha = elapsed / (0.2 * animationFPS);
         m_alpha = std::fmax(0.0, m_alpha);
+        m_alpha = std::fmin(1.0, m_alpha);
+    }
+    else if (elapsed < 0.4 * animationFPS) {
+        m_fontDraw = m_fontBig;
+        m_drawFormat = DT_LEFT;
+        m_alpha = 1.0;
+        m_alpha_forHugeFont = 1.0 - (elapsed - 0.2 * animationFPS) / (0.2 * animationFPS);
+        m_alpha_forHugeFont = std::fmax(0.0, m_alpha_forHugeFont);
+        m_alpha_forHugeFont = std::fmin(1.0, m_alpha_forHugeFont);
     }
     else {
         m_fontDraw = m_fontBig;
+        m_drawFormat = DT_LEFT;
         m_alpha_forHugeFont = 0.0;
 
         double fadeOut = m_fadeOutTime * animationFPS;
         if (elapsed > fadeOut) {
             m_alpha = 1.0 - (elapsed - fadeOut) / (totalFrameCount - fadeOut);
             m_alpha = std::fmax(0.0, m_alpha);
+            m_alpha = std::fmin(1.0, m_alpha);
         }
         else {
             m_alpha = 1.0;
@@ -320,10 +327,10 @@ void worldText::Crit::draw() {
         shadowRect.bottom -= m_shadowWeight;
     }
 
-    m_fontDraw->DrawTextW(m_sprite, utf8_to_utf16(m_text).c_str(), -1, &shadowRect, DT_LEFT, D3DCOLOR_ARGB(static_cast<int>(200 * m_alpha), 0, 0, 0));
-    m_fontDraw->DrawTextW(m_sprite, utf8_to_utf16(m_text).c_str(), -1, &m_rect, DT_LEFT, D3DCOLOR_ARGB(static_cast<int>(m_a * m_alpha), m_r, m_g, m_b));
+    m_fontDraw->DrawTextW(m_sprite, utf8_to_utf16(m_text).c_str(), -1, &shadowRect, m_drawFormat, D3DCOLOR_ARGB(static_cast<int>(200 * m_alpha), 0, 0, 0));
+    m_fontDraw->DrawTextW(m_sprite, utf8_to_utf16(m_text).c_str(), -1, &m_rect, m_drawFormat, D3DCOLOR_ARGB(static_cast<int>(m_a * m_alpha), m_r, m_g, m_b));
 
     if (m_alpha_forHugeFont > 0.0) {
-        m_fontHuge->DrawTextW(m_sprite, utf8_to_utf16(m_text).c_str(), -1, &shadowRect, DT_LEFT, D3DCOLOR_ARGB(static_cast<int>(m_a * m_alpha_forHugeFont), m_r, m_g, m_b));
+        m_fontHuge->DrawTextW(m_sprite, utf8_to_utf16(m_text).c_str(), -1, &shadowRect, m_drawFormat, D3DCOLOR_ARGB(static_cast<int>(m_a * m_alpha_forHugeFont), m_r, m_g, m_b));
     }
 }
