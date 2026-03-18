@@ -28,8 +28,6 @@ void polyfill_checkCPU() {
     SSE2 = (cpuInfo[3] & (1 << 26)) != 0;
 }
 
-/*
-* libSiliconPatch has this, disable it in xp3 in favor of libSiliconPatch
 OPERATOR_MULTIPLY_1 p_operator_multiply_1 = reinterpret_cast<OPERATOR_MULTIPLY_1>(0x7bca80);
 OPERATOR_MULTIPLY_1 p_original_operator_multiply_1 = NULL;
 float* __fastcall detoured_operator_multiply_1(float* vecResult, float* vecA, float* matB)
@@ -334,7 +332,6 @@ void __fastcall detoured_transformAABox(float* C33Mat, float* C3Vec_A, float* C3
 
     return;
 }
-*/
 
 LUA_SQRT p_lua_sqrt = reinterpret_cast<LUA_SQRT>(0x7fb020);
 LUA_SQRT p_original_lua_sqrt = NULL;
@@ -449,8 +446,6 @@ std::string getPolyfillDebug() {
     return ss.str();
 }
 
-/*
-* libSiliconPatch has this, disable it in xp3 in favor of libSiliconPatch
 CROSSPRODUCT p_crossProduct = reinterpret_cast<CROSSPRODUCT>(0x672130);
 CROSSPRODUCT p_original_crossProduct = NULL;
 float* __fastcall detoured_crossProduct(float* result, float* vecA, float* vecB) {
@@ -475,7 +470,6 @@ double __fastcall detoured_evaluatePolynomial(uint32_t count, float* coefficient
     }
     return result;
 }
-*/
 
 static const DWORD criticalSectionSpin = 4000;
 ENTERCRITICALSECTION p_enterCriticalSection = NULL;
@@ -487,7 +481,6 @@ void WINAPI detoured_enterCriticalSection(LPCRITICAL_SECTION objPtr) {
     p_original_enterCriticalSection(objPtr);
 }
 
-/* libSiliconPatch has this, disable it in xp3 in favor of libSiliconPatch
 // This patch is contributed by akamizu. It was originaly found on Mac.
 // Thank you akamizu!
 FUNTYPE_0x7c29f0 p_fun_0x7c29f0 = reinterpret_cast<FUNTYPE_0x7c29f0>(0x7c29f0);
@@ -550,4 +543,3 @@ uint16_t __fastcall detoured_fun_0x7c29f0(float* ray_data, uint32_t vertex_base,
 
     return 1;
 }
-*/
