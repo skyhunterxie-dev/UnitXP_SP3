@@ -55,15 +55,17 @@ CXXFLAGS = --target=$(TRIPLE) /O2 /MT /EHsc /W3 -Wno-microsoft-cast -Wno-unused-
 			/std:c++17 /Zc:__cplusplus \
             /DWIN32_LEAN_AND_MEAN /D_X86_ /D_WIN32 \
             /DNULL=0 \
-            /Z7 \
-           -imsvc "$(XWIN_ROOT)/crt/include" \
-           -imsvc "$(XWIN_ROOT)/sdk/include/ucrt" \
-           -imsvc "$(XWIN_ROOT)/sdk/include/um" \
-           -imsvc "$(XWIN_ROOT)/sdk/include/shared" \
-           -imsvc "$(MINHOOK_DIR)/include" \
-           -imsvc "$(D3DX_INCLUDES)"
+            /Z7 /GS /Gy \
+            -flto=thin \
+            -imsvc "$(XWIN_ROOT)/crt/include" \
+            -imsvc "$(XWIN_ROOT)/sdk/include/ucrt" \
+            -imsvc "$(XWIN_ROOT)/sdk/include/um" \
+            -imsvc "$(XWIN_ROOT)/sdk/include/shared" \
+            -imsvc "$(MINHOOK_DIR)/include" \
+            -imsvc "$(D3DX_INCLUDES)"
 
-LDFLAGS  = /NOLOGO /DLL /MACHINE:X86 /FUNCTIONPADMIN /OPT:REF /OPT:ICF \
+LDFLAGS  = /NOLOGO /DLL /MACHINE:X86 /OPT:REF /OPT:ICF /SAFESEH \
+            /NXCOMPAT /FUNCTIONPADMIN \
             /DEBUG /PDB:"$(TARGET:.dll=.pdb)" /ignore:4099 \
             /LIBPATH:"$(XWIN_ROOT)/crt/lib/x86" \
             /LIBPATH:"$(XWIN_ROOT)/sdk/lib/ucrt/x86" \
