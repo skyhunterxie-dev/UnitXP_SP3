@@ -50,7 +50,11 @@ OBJS = $(patsubst %.cpp,%.obj,$(patsubst %.c,%.obj,$(SRCS)))
 LIBS     = user32.lib kernel32.lib gdi32.lib libcmt.lib
 
 # --- Compiler & Linker Flags ---
-CXXFLAGS = --target=$(TRIPLE) /O2 /MT /EHsc /W3 -Wno-microsoft-cast -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function /nologo /hotpatch \
+# It seems /O2 would crash the game.
+# As I read MinHook provided MSVC projects, it is /O1 for release and /Od for debug
+CXXFLAGS = --target=$(TRIPLE) \
+            /O1 \
+            /MT /EHsc /W3 -Wno-microsoft-cast -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function /nologo /hotpatch \
             /arch:SSE2 /fp:precise \
 			/std:c++17 /Zc:__cplusplus \
             /DWIN32_LEAN_AND_MEAN /D_X86_ /D_WIN32 \
