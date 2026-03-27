@@ -495,12 +495,16 @@ int __fastcall detoured_UnitXP(void* L) {
         else if (cmd == "weatherAlwaysClear") {
             string subcmd{ lua_tostring(L, 2) };
             if (subcmd == "enable") {
-                weather_alwaysClear = true;
+                weather_noRain = true;
+                weather_noSnow = true;
+                weather_noSandstorm = true;
             }
             if (subcmd == "disable") {
-                weather_alwaysClear = false;
+                weather_noRain = false;
+                weather_noSnow = false;
+                weather_noSandstorm = false;
             }
-            lua_pushboolean(L, weather_alwaysClear);
+            lua_pushboolean(L, weather_noRain);
             return 1;
         }
         else if (cmd == "hideEXPtext") {
