@@ -25,7 +25,7 @@ static ID3DXFont* scene_selectedHUGE = NULL;
 static ID3DXSprite* scene_sprite = NULL;
 static bool scene_attemptFontsReset = false;
 static std::list<worldText::Floating> floatingTexts{};
-static std::unordered_map<uint64_t, worldText::Crit> critTexts{};
+static std::unordered_map<uint64_t, worldText::CritsGroup> critsGroups{};
 static std::list<worldText::Floating> smallFloatingTexts{};
 static bool scene_checkIfD3D = false;
 static std::string scene_disableReason{};
@@ -539,7 +539,7 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
         }
 
         // First iteration does not draw but only update RECT for overlapping test
-        for (auto it = critTexts.begin(); it != critTexts.end();) {
+        for (auto it = critsGroups.begin(); it != critsGroups.end();) {
             int update = -1;
             if (it->second.m_serif) {
                 update = it->second.update(scene_selected, scene_selectedBIG, scene_selectedHUGE, scene_sprite, scene_lastDXdevice);
@@ -549,7 +549,7 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
             }
 
             if (update == -1) {
-                it = critTexts.erase(it);
+                it = critsGroups.erase(it);
                 continue;
             }
             it++;
@@ -572,9 +572,8 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
                 }
 
                 if (update > 0) {
-                    for (auto jt = critTexts.begin(); jt != critTexts.end(); jt++) {
-                        RECT r = {};
-                        if (IntersectRect(&r, &(jt->second.m_rect), &(it->m_rect)) != 0) {
+                    for (auto jt = critsGroups.begin(); jt != critsGroups.end(); jt++) {
+                        if (jt->second.intersect(it->m_rect)) {
                             update = 0;
                             break;
                         }
@@ -603,9 +602,9 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
                 }
 
                 if (update > 0) {
-                    for (auto jt = critTexts.begin(); jt != critTexts.end(); jt++) {
+                    for (auto jt = critsGroups.begin(); jt != critsGroups.end(); jt++) {
                         RECT r = {};
-                        if (IntersectRect(&r, &(jt->second.m_rect), &(it->m_rect)) != 0) {
+                        if (jt->second.intersect(it->m_rect)) {
                             update = 0;
                             break;
                         }
@@ -619,7 +618,7 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
             }
 
 
-            for (auto it = critTexts.begin(); it != critTexts.end();) {
+            for (auto it = critsGroups.begin(); it != critsGroups.end();) {
                 int update = -1;
                 if (it->second.m_serif) {
                     update = it->second.update(scene_selected, scene_selectedBIG, scene_selectedHUGE, scene_sprite, scene_lastDXdevice);
@@ -629,7 +628,7 @@ void __fastcall detoured_sceneEnd(uint32_t CGxDevice, void* ignored) {
                 }
 
                 if (update == -1) {
-                    it = critTexts.erase(it);
+                    it = critsGroups.erase(it);
                     continue;
                 }
                 if (update > 0) {
@@ -774,14 +773,13 @@ void __fastcall detoured_createWorldText(uint32_t self, void* ignored, int type,
     }
     case 2:
     {
-        worldText::Crit newCrit(text, stickToGUID, r, g, b, 255, font, fontBIG, fontHUGE, scene_sprite, serif, scene_lastDXdevice);
-
-        auto it = critTexts.find(stickToGUID);
-        if (it != critTexts.end()) {
-            critTexts.erase(it);
+        auto it = critsGroups.find(stickToGUID);
+        if (it == critsGroups.end()) {
+            worldText::CritsGroup newGroup(stickToGUID, font, fontBIG, fontHUGE, scene_sprite, serif, scene_lastDXdevice);
+            it = critsGroups.insert({ stickToGUID, newGroup }).first;
         }
 
-        critTexts.insert({ stickToGUID, newCrit });
+        it->second.add(text, r, g, b, 255);
         return;
     }
     default:
@@ -850,15 +848,13 @@ void scene_addCritText(std::string text, int r, int g, int b, int a) {
 
     uint64_t player = vanilla1121_unitGUID("player");
 
-    D3DCOLOR color = D3DCOLOR_ARGB(a, r, g, b);
-    worldText::Crit newCrit(text, player, r, g, b, a, font, fontBIG, fontHUGE, scene_sprite, serif, scene_lastDXdevice);
-
-    auto it = critTexts.find(player);
-    if (it != critTexts.end()) {
-        critTexts.erase(it);
+    auto it = critsGroups.find(player);
+    if (it == critsGroups.end()) {
+        worldText::CritsGroup newGroup(player, font, fontBIG, fontHUGE, scene_sprite, serif, scene_lastDXdevice);
+        it = critsGroups.insert({ player, newGroup }).first;
     }
 
-    critTexts.insert({ player, newCrit });
+    it->second.add(text, r, g, b, a);
 }
 
 void scene_onPlayerEnteringWorld() {
