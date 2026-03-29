@@ -498,14 +498,52 @@ int __fastcall detoured_UnitXP(void* L) {
                 weather_noRain = true;
                 weather_noSnow = true;
                 weather_noSandstorm = true;
+                lua_pushboolean(L, true);
+                return 1;
             }
-            if (subcmd == "disable") {
+            else if (subcmd == "disable") {
                 weather_noRain = false;
                 weather_noSnow = false;
                 weather_noSandstorm = false;
+                lua_pushboolean(L, false);
+                return 1;
             }
-            lua_pushboolean(L, weather_noRain);
-            return 1;
+            else if (subcmd == "enableRain") {
+                weather_noRain = false;
+                lua_pushboolean(L, true);
+                return 1;
+            }
+            else if (subcmd == "disableRain") {
+                weather_noRain = true;
+                lua_pushboolean(L, false);
+                return 1;
+            }
+            else if (subcmd == "enableSnow") {
+                weather_noSnow = false;
+                lua_pushboolean(L, true);
+                return 1;
+            }
+            else if (subcmd == "disableSnow") {
+                weather_noSnow = true;
+                lua_pushboolean(L, false);
+                return 1;
+            }
+            else if (subcmd == "enableSandstorm") {
+                weather_noSandstorm = false;
+                lua_pushboolean(L, true);
+                return 1;
+            }
+            else if (subcmd == "disableSandstorm") {
+                weather_noSandstorm = true;
+                lua_pushboolean(L, false);
+                return 1;
+            }
+            else {
+                lua_pushboolean(L, !weather_noRain);
+                lua_pushboolean(L, !weather_noSnow);
+                lua_pushboolean(L, !weather_noSandstorm);
+                return 3;
+            }
         }
         else if (cmd == "hideEXPtext") {
             string subcmd{ lua_tostring(L, 2) };
