@@ -1,0 +1,26 @@
+name: Sync from Upstream
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # 每天凌晨 3 点 UTC（北京时间 11 点）
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync from Codeberg
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://codeberg.org/MarcelineVQ/WeirdUtils.git
+          git fetch upstream
+          git checkout main
+          git merge upstream/main --allow-unrelated-histories || true
+          git push origin main    
